@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
-use darling::{ast, FromDeriveInput, FromField, FromMeta};
-use quote::{quote, ToTokens};
+use darling::{ast, FromDeriveInput, FromField, FromMeta, FromVariant};
+use proc_macro2::TokenStream;
+use quote::{format_ident, quote, ToTokens};
 
 #[derive(Debug)]
 struct Args(HashMap<syn::Path, Option<syn::Expr>>);
@@ -57,20 +58,6 @@ impl<'a> ToTokens for ArgsRef<'a> {
 	}
 }
 
-/// Emits method calls with `Into::into` for every argument.
-#[derive(Debug)]
-struct ArgsInto<'a>(&'a Args);
-
-impl<'a> ToTokens for ArgsInto<'a> {
-	fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-		for (path, value) in &self.0 .0 {
-			tokens.extend(quote! {
-				.#path(#value.into())
-			})
-		}
-	}
-}
-
 #[derive(Debug, FromField)]
 #[darling(attributes(validate))]
 struct ValidateField {
@@ -90,6 +77,13 @@ struct ValidateField {
 	custom: HashMap<syn::Path, Option<Args>>,
 }
 
+#[derive(Debug, FromVariant)]
+struct ValidateVariant {
+	ident: syn::Ident,
+
+	fields: ast::Fields<ValidateField>,
+}
+
 macro_rules! impl_basic_rules {
 	(
 		$field:ident, $self:ident, $tokens:ident, $crate_name:ident,
@@ -100,7 +94,7 @@ macro_rules! impl_basic_rules {
 				let struct_ = syn::Ident::new(stringify!($struct_), proc_macro2::Span::call_site());
 
 				$tokens.extend(quote! {
-					#$crate_name::rule::#struct_::new(&$self.#$field)
+					#$crate_name::rule::#struct_::new(#$field)
 						#args
 						.validate(&())?;
 				});
@@ -110,13 +104,15 @@ macro_rules! impl_basic_rules {
 }
 
 impl ValidateField {
-	fn to_token_stream(&self, crate_name: &syn::Path) -> proc_macro2::TokenStream {
+	fn to_token_stream(
+		&self,
+		crate_name: &syn::Path,
+		field: &TokenStream,
+	) -> proc_macro2::TokenStream {
 		let mut tokens = proc_macro2::TokenStream::new();
 
-		let ident = self.ident.as_ref().unwrap();
-
 		impl_basic_rules! {
-			ident, self, tokens, crate_name,
+			field, self, tokens, crate_name,
 			length => LengthRule,
 			email => EmailRule,
 			url => UrlRule,
@@ -135,10 +131,8 @@ impl ValidateField {
 			});
 
 			if is_str {
-				let args = ArgsInto(args);
-
 				tokens.extend(quote! {
-					#crate_name::rule::RangeRule::new(#crate_name::util::DerefStr::deref_str(&self.#ident))
+					#crate_name::rule::RangeRule::new(#crate_name::util::DerefStr::deref_str(#field))
 						#args
 						.validate(&())?;
 				});
@@ -146,7 +140,7 @@ impl ValidateField {
 				let args = ArgsRef(args);
 
 				tokens.extend(quote! {
-					#crate_name::rule::RangeRule::new(&self.#ident)
+					#crate_name::rule::RangeRule::new(#field)
 						#args
 						.validate(&())?;
 				});
@@ -156,7 +150,7 @@ impl ValidateField {
 		for func in &self.func {
 			tokens.extend(quote! {
 				{
-					let result: Result<(), #crate_name::Error> = (#func)(ctx, &self.#ident);
+					let result: Result<(), #crate_name::Error> = (#func)(ctx, #field);
 					result?;
 				}
 			});
@@ -166,7 +160,7 @@ impl ValidateField {
 			let args = args.as_ref().map(ArgsRef);
 
 			tokens.extend(quote! {
-				<#path as #crate_name::Validate>::new(&self.#ident)
+				<#path as #crate_name::Validate>::new(#field)
 					#args
 					.validate(ctx)?;
 			});
@@ -181,7 +175,7 @@ fn default_context() -> syn::Type {
 }
 
 fn default_crate_name() -> syn::Path {
-	syn::parse_quote! { ::validator }
+	syn::parse_quote! { ::wary }
 }
 
 #[derive(FromDeriveInput)]
@@ -190,7 +184,7 @@ struct Validate {
 	ident: syn::Ident,
 	generics: syn::Generics,
 
-	data: ast::Data<(), ValidateField>,
+	data: ast::Data<ValidateVariant, ValidateField>,
 
 	/// The context type to use when validating.
 	#[darling(default = "default_context")]
@@ -201,40 +195,111 @@ struct Validate {
 
 impl ToTokens for Validate {
 	fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-		let Self {
-			ref ident,
-			ref generics,
-			ref data,
-			ref crate_name,
-			ref context,
-		} = self;
+		let (imp, ty, wher) = self.generics.split_for_impl();
 
-		let (imp, ty, wher) = generics.split_for_impl();
+		let crate_name = &self.crate_name;
+		let context = &self.context;
+		let ident = &self.ident;
 
-		// TODO: support enum
-		let fields = data.as_ref().take_struct().unwrap().fields;
-		let fields = fields.iter().map(|f| f.to_token_stream(crate_name));
+		match &self.data {
+			ast::Data::Enum(variants) => {
+				let variants_len = variants.len();
+				let variants = variants.iter().map(|v| {
+					let ident = &v.ident;
 
-		tokens.extend(quote! {
-			impl #imp #crate_name::Validate for #ident #ty #wher {
-				type Context = #context;
+					let idents = v
+						.fields
+						.iter()
+						.enumerate()
+						.map(|(i, f)| {
+							f.ident.as_ref().map_or_else(
+								|| (true, format_ident!("_{i}").into_token_stream()),
+								|f| (false, ToTokens::to_token_stream(f)),
+							)
+						})
+						.collect::<Vec<_>>();
 
-				fn validate(&self, ctx: &Self::Context) -> Result<(), #crate_name::Error> {
-					#(
-						#fields
-					)*
+					let fields = v
+						.fields
+						.iter()
+						.zip(idents.iter())
+						.map(|(f, (_, field))| f.to_token_stream(crate_name, field));
 
-					Ok(())
-				}
+					let destruct = idents.iter().enumerate().map(|(i, (is_tuple, ident))| {
+						if *is_tuple {
+							quote! { #i: #ident }
+						} else {
+							ident.clone()
+						}
+					});
+
+					quote! {
+						Self::#ident { #(#destruct),* } => {
+							#(
+								#fields
+							)*
+						}
+					}
+				});
+
+				let variants = if variants_len == 0 {
+					None
+				} else {
+					Some(quote! {
+						match self {
+							#(
+								#variants
+							)*
+						};
+					})
+				};
+
+				tokens.extend(quote! {
+					impl #imp #crate_name::Validate for #ident #ty #wher {
+						type Context = #context;
+
+						fn validate(&self, ctx: &Self::Context) -> Result<(), #crate_name::Error> {
+							#variants
+
+							Ok(())
+						}
+					}
+				});
 			}
-		});
+			ast::Data::Struct(struct_) => {
+				let fields = struct_.fields.iter().enumerate().map(|(i, f)| {
+					f.to_token_stream(
+						crate_name,
+						&f.ident
+							.as_ref()
+							.map_or_else(|| quote!(&self.#i), |f| quote!(&self.#f)),
+					)
+				});
+
+				tokens.extend(quote! {
+					impl #imp #crate_name::Validate for #ident #ty #wher {
+						type Context = #context;
+
+						fn validate(&self, ctx: &Self::Context) -> Result<(), #crate_name::Error> {
+							#(
+								#fields
+							)*
+
+							Ok(())
+						}
+					}
+				});
+			}
+		};
 	}
 }
 
 #[proc_macro_derive(Validate, attributes(validate, serde))]
 pub fn validate(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-	let validate =
-		Validate::from_derive_input(&syn::parse_macro_input!(input as syn::DeriveInput)).unwrap();
+	let input = syn::parse_macro_input!(input as syn::DeriveInput);
 
-	quote!(#validate).into()
+	match Validate::from_derive_input(&input) {
+		Ok(validate) => validate.into_token_stream().into(),
+		Err(e) => e.write_errors().into(),
+	}
 }

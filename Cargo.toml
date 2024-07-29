@@ -7,7 +7,7 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-validator-derive = { path = "derive", version = "0.0.1", optional = true }
+wary-derive = { path = "derive", version = "0.0.1", optional = true }
 email_address = { version = "0.2", default-features = false, optional = true }
 thiserror = "1"
 url = { version = "2", optional = true }
@@ -15,7 +15,7 @@ url = { version = "2", optional = true }
 [features]
 default = ["url", "derive"]
 
-derive = ["dep:validator-derive"]
+derive = ["dep:wary-derive"]
 email = ["dep:email_address"]
 url = ["dep:url"]
 

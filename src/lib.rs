@@ -2,7 +2,9 @@ pub mod rule;
 pub mod util;
 
 #[cfg(feature = "derive")]
-pub use validator_derive::*;
+pub use wary_derive::*;
+
+pub struct Transcript;
 
 #[derive(Debug, thiserror::Error)]
 #[non_exhaustive]
@@ -76,19 +78,5 @@ where
 			.left
 			.validate(&ctx.0)
 			.or_else(|_| self.right.validate(&ctx.1))
-	}
-}
-
-pub trait Optional {
-	type Inner;
-
-	fn inner(&self) -> Option<&Self::Inner>;
-}
-
-impl<T> Optional for Option<T> {
-	type Inner = T;
-
-	fn inner(&self) -> Option<&Self::Inner> {
-		self.as_ref()
 	}
 }

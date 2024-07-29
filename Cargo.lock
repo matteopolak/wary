@@ -183,21 +183,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "validator-derive"
-version = "0.1.0"
+name = "wary"
+version = "0.0.1"
+dependencies = [
+ "email_address",
+ "thiserror",
+ "url",
+ "wary-derive",
+]
+
+[[package]]
+name = "wary-derive"
+version = "0.0.1"
 dependencies = [
  "darling",
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "wary"
-version = "0.1.0"
-dependencies = [
- "email_address",
- "thiserror",
- "url",
- "validator-derive",
 ]

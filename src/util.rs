@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 pub trait DerefStr<'s> {
 	type Target;
 
@@ -20,10 +22,21 @@ impl<'s> DerefStr<'s> for String {
 	}
 }
 
-impl<'s> DerefStr<'s> for Option<String> {
-	type Target = Option<&'s str>;
+impl<'s> DerefStr<'s> for Cow<'_, str> {
+	type Target = &'s str;
 
 	fn deref_str(&'s self) -> Self::Target {
-		self.as_deref()
+		self
+	}
+}
+
+impl<'s, T> DerefStr<'s> for Option<T>
+where
+	T: DerefStr<'s>,
+{
+	type Target = Option<T::Target>;
+
+	fn deref_str(&'s self) -> Self::Target {
+		self.as_ref().map(DerefStr::deref_str)
 	}
 }
