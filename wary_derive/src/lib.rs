@@ -20,44 +20,92 @@ impl ToTokens for Args {
 	}
 }
 
+enum Arg {
+	Name(syn::Path),
+	NameValue(syn::MetaNameValue),
+	Range(syn::ExprRange),
+}
+
+impl syn::parse::Parse for Arg {
+	fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+		if input.peek(syn::Ident) {
+			let within = input.fork();
+			let path = within.parse::<syn::Path>()?;
+
+			return Ok(if within.peek(syn::token::Eq) {
+				input.parse::<syn::Path>()?;
+
+				let eq = input.parse::<syn::token::Eq>()?;
+
+				Self::NameValue(syn::MetaNameValue {
+					path,
+					eq_token: eq,
+					value: input.parse()?,
+				})
+			} else if within.peek(syn::token::Comma) || within.peek(syn::token::Paren) {
+				input.parse::<syn::Path>()?;
+
+				Self::Name(path)
+			} else {
+				Self::Range(input.parse::<syn::ExprRange>()?)
+			});
+		}
+
+		if let Ok(range) = input.parse::<syn::ExprRange>() {
+			// otherwise, check if it's range syntax and expand it into a few different
+			// arguments l..h -> min = l, exclusive_max = h
+			// l..=h -> min = l, max = h
+			// ..h -> exclusive_max = h
+			// ..=h -> max = h
+			//
+			// unfortuntely cannot support exclusive min with this syntax, but it could be
+			// provided manually with a simple ..=h and exclusive_min=...
+
+			return Ok(Self::Range(range));
+		}
+
+		Err(input.error("expected `=` or range syntax"))
+	}
+}
+
 impl FromMeta for Args {
 	fn from_meta(item: &syn::Meta) -> Result<Self, darling::Error> {
 		let mut map = HashMap::new();
 
-		// for each item, if it's a key-value pair, then parse as normal.
-		// if it's just a key, use the default V and insert it.
-		if let syn::Meta::List(ref list) = item {
-			list
-				.parse_nested_meta(|meta| {
-					let value = if meta.input.peek(syn::token::Eq) {
-						meta.input.parse::<syn::token::Eq>()?;
-						Some(meta.input.parse()?)
-					} else {
-						None
-					};
+		let metas = item
+			.require_list()?
+			.parse_args_with(Punctuated::<Arg, syn::Token![,]>::parse_terminated)?;
 
-					map.insert(meta.path, value);
+		for meta in metas {
+			match meta {
+				Arg::NameValue(meta) => {
+					map.insert(meta.path, Some(meta.value));
+				}
+				Arg::Name(path) => {
+					map.insert(path, None);
+				}
+				Arg::Range(range) => {
+					if let Some(start) = range.start {
+						map.insert(syn::parse_quote! { min }, Some(*start));
+					}
 
-					Ok(())
-				})
-				.unwrap();
+					match range.limits {
+						syn::RangeLimits::HalfOpen(..) => {
+							if let Some(end) = range.end {
+								map.insert(syn::parse_quote! { exclusive_max }, Some(*end));
+							}
+						}
+						syn::RangeLimits::Closed(..) => {
+							if let Some(end) = range.end {
+								map.insert(syn::parse_quote! { max }, Some(*end));
+							}
+						}
+					}
+				}
+			}
 		}
 
 		Ok(Self(map))
-	}
-}
-
-/// Emits method calls with references instead of values.
-#[derive(Debug)]
-struct ArgsRef<'a>(&'a Args);
-
-impl ToTokens for ArgsRef<'_> {
-	fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-		for (path, value) in &self.0 .0 {
-			tokens.extend(quote! {
-				.#path(&#value)
-			})
-		}
 	}
 }
 
@@ -102,6 +150,9 @@ struct ValidateField {
 	#[darling(default)]
 	custom: HashMap<syn::Path, Option<Args>>,
 
+	#[darling(default)]
+	inner: Option<Box<ValidateField>>,
+
 	#[darling(flatten)]
 	builtin: HashMap<syn::Path, Args>,
 }
@@ -121,8 +172,25 @@ struct ValidateFieldWrapper {
 	#[darling(default)]
 	custom: HashMap<syn::Path, Option<Args>>,
 
+	#[darling(default)]
+	inner: Option<Box<ValidateField>>,
+
 	#[darling(flatten)]
 	builtin: HashMap<syn::Path, Args>,
+}
+
+/// Emits method calls with references instead of values.
+#[derive(Debug)]
+struct ArgsRef<'a>(&'a Args);
+
+impl ToTokens for ArgsRef<'_> {
+	fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+		for (path, value) in &self.0 .0 {
+			tokens.extend(quote! {
+				.#path(&#value)
+			})
+		}
+	}
 }
 
 impl ValidateField {
@@ -143,10 +211,30 @@ impl ValidateField {
 		}
 
 		for (path, args) in &self.builtin {
+			let args_ref = ArgsRef(args);
+			let args: &dyn ToTokens = if path.is_ident("range") {
+				&args_ref
+			} else {
+				args
+			};
+
 			tokens.extend(quote! {
 					#crate_name::rule::#path::Rule::new(field)
 					#args
 					.validate(&())?;
+			});
+		}
+
+		if let Some(inner) = &self.inner {
+			let inner = inner.to_token_stream(crate_name, &quote!(field), ty, false);
+
+			tokens.extend(quote! {
+				#crate_name::rule::inner::Rule::new(field, |field| {
+					#inner
+
+					Ok::<(), #crate_name::Error>(())
+				})
+				.validate(&())?;
 			});
 		}
 
@@ -227,6 +315,7 @@ impl ValidateFieldWrapper {
 			or: self.or,
 			and: Tuple::default(),
 			custom: self.custom,
+			inner: self.inner,
 			builtin: self.builtin,
 		}
 	}

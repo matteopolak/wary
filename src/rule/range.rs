@@ -3,9 +3,9 @@ use std::{borrow::Cow, cmp::Ordering};
 use crate::{Error, Validate};
 
 #[doc(hidden)]
-pub type Rule<'i, T, Min, Max> = RangeRule<'i, T, Min, Max>;
+pub type Rule<T> = RangeRule<T>;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, Copy, thiserror::Error)]
 pub enum RangeError {
 	#[error("Value is too small")]
 	TooSmall,
@@ -17,82 +17,66 @@ pub trait Compare<B: ?Sized> {
 	fn compare(&self, other: &B) -> Option<Ordering>;
 }
 
-pub struct RangeRule<'i, T, Min, Max> {
-	min: Option<Min>,
-	exclusive_min: bool,
-	max: Option<Max>,
-	exclusive_max: bool,
-	inner: &'i T,
+pub struct RangeRule<T> {
+	error: Option<RangeError>,
+	inner: T,
 }
 
-impl<'i, T, Min, Max> RangeRule<'i, T, Min, Max> {
-	pub fn new(inner: &'i T) -> Self {
-		Self {
-			min: None,
-			max: None,
-			exclusive_min: false,
-			exclusive_max: false,
-			inner,
+impl<T> RangeRule<T> {
+	pub fn new(inner: T) -> Self {
+		Self { error: None, inner }
+	}
+
+	pub fn min<Min>(mut self, min: Min) -> Self
+	where
+		T: Compare<Min>,
+	{
+		if let Some(Ordering::Less) = self.inner.compare(&min) {
+			self.error = Some(RangeError::TooSmall);
 		}
-	}
-
-	pub fn min(mut self, min: Min) -> Self
-	where
-		T: Compare<Min>,
-	{
-		self.min = Some(min);
 		self
 	}
 
-	pub fn max(mut self, max: Max) -> Self
+	pub fn max<Max>(mut self, max: Max) -> Self
 	where
 		T: Compare<Max>,
 	{
-		self.max = Some(max);
+		if let Some(Ordering::Greater) = self.inner.compare(&max) {
+			self.error = Some(RangeError::TooLarge);
+		}
 		self
 	}
 
-	pub fn exclusive_min(mut self, min: Min) -> Self
+	pub fn exclusive_min<Min>(mut self, min: Min) -> Self
 	where
 		T: Compare<Min>,
 	{
-		self.min = Some(min);
-		self.exclusive_min = true;
+		if let Some(Ordering::Equal | Ordering::Less) = self.inner.compare(&min) {
+			self.error = Some(RangeError::TooSmall);
+		}
 		self
 	}
 
-	pub fn exclusive_max(mut self, max: Max) -> Self
+	pub fn exclusive_max<Max>(mut self, max: Max) -> Self
 	where
 		T: Compare<Max>,
 	{
-		self.max = Some(max);
-		self.exclusive_max = true;
+		if let Some(Ordering::Equal | Ordering::Greater) = self.inner.compare(&max) {
+			self.error = Some(RangeError::TooLarge);
+		}
 		self
 	}
 }
 
-impl<T, Min, Max> Validate for RangeRule<'_, T, Min, Max>
+impl<T> Validate for RangeRule<T>
 where
-	T: Compare<Min>,
-	T: Compare<Max>,
+	for<'a> &'a T: Compare<&'a T>,
 {
 	type Context = ();
 
 	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		if let Some(ref min) = self.min {
-			match self.inner.compare(min) {
-				Some(Ordering::Greater) => {}
-				Some(Ordering::Equal) if !self.exclusive_min => {}
-				_ => return Err(RangeError::TooSmall.into()),
-			}
-		}
-
-		if let Some(ref max) = self.max {
-			match self.inner.compare(max) {
-				Some(Ordering::Less) => {}
-				Some(Ordering::Equal) if !self.exclusive_max => {}
-				_ => return Err(RangeError::TooLarge.into()),
-			}
+		if let Some(error) = self.error {
+			return Err(error.into());
 		}
 
 		Ok(())
@@ -114,6 +98,24 @@ impl Compare<&str> for Cow<'_, str> {
 	}
 }
 
+impl Compare<Cow<'_, str>> for str {
+	fn compare(&self, other: &Cow<'_, str>) -> Option<Ordering> {
+		self.partial_cmp(other.as_ref())
+	}
+}
+
+impl Compare<&&str> for &'_ Cow<'_, str> {
+	fn compare(&self, other: &&&str) -> Option<Ordering> {
+		self.as_ref().partial_cmp(other)
+	}
+}
+
+impl Compare<&&str> for &'_ String {
+	fn compare(&self, other: &&&str) -> Option<Ordering> {
+		self.as_str().partial_cmp(other)
+	}
+}
+
 #[cfg(test)]
 mod test {
 	use super::*;
@@ -121,20 +123,20 @@ mod test {
 	#[test]
 	fn test_integer_range() {
 		for n in 1u32..=10 {
-			let rule = RangeRule::new(&n).min(1).max(10);
+			let rule = RangeRule::new(&n).min(&1).max(&10);
 			assert!(rule.validate(&()).is_ok());
 		}
 
-		let rule = RangeRule::new(&0u32).exclusive_min(0);
+		let rule = RangeRule::new(&0u32).exclusive_min(&0);
 		assert!(rule.validate(&()).is_err());
 
-		let rule = RangeRule::new(&11u32).exclusive_max(10);
+		let rule = RangeRule::new(&11u32).exclusive_max(&10);
 		assert!(rule.validate(&()).is_err());
 
-		let rule = RangeRule::new(&0u32).min(1);
+		let rule = RangeRule::new(&0u32).min(&1);
 		assert!(rule.validate(&()).is_err());
 
-		let rule = RangeRule::new(&11u32).max(10);
+		let rule = RangeRule::new(&11u32).max(&10);
 		assert!(rule.validate(&()).is_err());
 	}
 
@@ -143,20 +145,20 @@ mod test {
 		for n in 1..=10 {
 			let n = n as f32;
 
-			let rule = RangeRule::new(&n).min(1.0).max(10.0);
+			let rule = RangeRule::new(&n).min(&1.0).max(&10.0);
 			assert!(rule.validate(&()).is_ok());
 		}
 
-		let rule = RangeRule::new(&0.0f32).exclusive_min(0.0);
+		let rule = RangeRule::new(&0.0f32).exclusive_min(&0.0);
 		assert!(rule.validate(&()).is_err());
 
-		let rule = RangeRule::new(&11.0f32).exclusive_max(10.0);
+		let rule = RangeRule::new(&11.0f32).exclusive_max(&10.0);
 		assert!(rule.validate(&()).is_err());
 
-		let rule = RangeRule::new(&0.0f32).min(1.0);
+		let rule = RangeRule::new(&0.0f32).min(&1.0);
 		assert!(rule.validate(&()).is_err());
 
-		let rule = RangeRule::new(&11.0f32).max(10.0);
+		let rule = RangeRule::new(&11.0f32).max(&10.0);
 		assert!(rule.validate(&()).is_err());
 	}
 

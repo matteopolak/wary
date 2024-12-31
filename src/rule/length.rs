@@ -26,6 +26,8 @@ pub struct Chars<T>(pub T);
 pub struct LengthRule<T> {
 	min: Option<usize>,
 	max: Option<usize>,
+	exclusive_min: bool,
+	exclusive_max: bool,
 	inner: T,
 }
 
@@ -34,33 +36,59 @@ impl<T> LengthRule<T> {
 		Self {
 			min: None,
 			max: None,
+			exclusive_min: false,
+			exclusive_max: false,
 			inner,
 		}
 	}
 
-	pub fn chars(self) -> LengthRule<Chars<T>> {
+	pub fn chars(self) -> LengthRule<Chars<T>>
+	where
+		Chars<T>: Length,
+	{
 		LengthRule {
 			min: self.min,
 			max: self.max,
+			exclusive_min: self.exclusive_min,
+			exclusive_max: self.exclusive_max,
 			inner: Chars(self.inner),
 		}
 	}
 
-	pub fn bytes(self) -> LengthRule<Bytes<T>> {
+	pub fn bytes(self) -> LengthRule<Bytes<T>>
+	where
+		Bytes<T>: Length,
+	{
 		LengthRule {
 			min: self.min,
 			max: self.max,
+			exclusive_min: self.exclusive_min,
+			exclusive_max: self.exclusive_max,
 			inner: Bytes(self.inner),
 		}
 	}
 
 	pub fn min(mut self, min: usize) -> Self {
 		self.min = Some(min);
+		self.exclusive_min = false;
 		self
 	}
 
 	pub fn max(mut self, max: usize) -> Self {
 		self.max = Some(max);
+		self.exclusive_max = false;
+		self
+	}
+
+	pub fn exclusive_min(mut self, min: usize) -> Self {
+		self.min = Some(min);
+		self.exclusive_min = true;
+		self
+	}
+
+	pub fn exclusive_max(mut self, max: usize) -> Self {
+		self.max = Some(max);
+		self.exclusive_max = true;
 		self
 	}
 }
@@ -185,17 +213,5 @@ mod test {
 
 		let rule = LengthRule::new(&[1, 2, 3, 4, 5]).min(6).max(6);
 		assert!(rule.validate(&()).is_err());
-	}
-
-	#[test]
-	fn test_option_length() {
-		let rule = LengthRule::new(Some("hello")).chars().min(5).max(5);
-		assert!(rule.validate(&()).is_ok());
-
-		let rule = LengthRule::new(Some("hello")).chars().min(6).max(6);
-		assert!(rule.validate(&()).is_err());
-
-		let rule = LengthRule::new(None::<&str>).chars().min(5).max(5);
-		assert!(rule.validate(&()).is_ok());
 	}
 }

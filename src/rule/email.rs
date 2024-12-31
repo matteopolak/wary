@@ -1,4 +1,4 @@
-use std::{borrow::Cow, str::FromStr};
+use std::str::FromStr;
 
 use crate::{Error, Validate};
 
@@ -27,20 +27,10 @@ where
 	type Context = ();
 
 	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		let Some(email) = self.inner.email() else {
-			return Ok(());
-		};
+		let email = self.inner.email();
 
-		// TODO: remove this allocation!!!!
+		// TODO: Look into avoiding the allocation
 		email_address::EmailAddress::from_str(email)?;
-		Ok(())
-	}
-}
-
-impl<T> Validate for EmailRule<email_address::EmailAddress> {
-	type Context = ();
-
-	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
 		Ok(())
 	}
 }
@@ -51,15 +41,6 @@ where
 {
 	fn email(&self) -> &str {
 		self.as_ref()
-	}
-}
-
-impl<T> Email for &T
-where
-	T: Email,
-{
-	fn email(&self) -> Option<&str> {
-		(**self).email()
 	}
 }
 
@@ -74,13 +55,7 @@ mod test {
 		let rule = EmailRule::new(email);
 		assert!(rule.validate(&()).is_ok());
 
-		let rule = EmailRule::new(Some(email));
-		assert!(rule.validate(&()).is_ok());
-
-		let rule = EmailRule::new(Some("invalid"));
+		let rule = EmailRule::new("invalid");
 		assert!(rule.validate(&()).is_err());
-
-		let rule = EmailRule::new(None::<&str>);
-		assert!(rule.validate(&()).is_ok());
 	}
 }

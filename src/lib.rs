@@ -1,6 +1,7 @@
 pub mod rule;
 pub mod util;
 
+use core::fmt;
 use std::borrow::Cow;
 
 #[cfg(feature = "derive")]
@@ -8,9 +9,15 @@ pub use wary_derive::*;
 
 pub struct Transcript;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(thiserror::Error)]
 #[non_exhaustive]
 pub enum Error {
+	#[error("value is not alphanumeric")]
+	Alphanumeric,
+	#[error("value is not ascii")]
+	Ascii,
+	#[error("value does not contain {0}")]
+	Contains(Box<dyn std::fmt::Display>),
 	#[cfg(feature = "email")]
 	#[error(transparent)]
 	Email(#[from] email_address::Error),
@@ -23,6 +30,21 @@ pub enum Error {
 	Range(#[from] rule::range::RangeError),
 	#[error("{0}")]
 	Custom(Cow<'static, str>),
+}
+
+impl fmt::Debug for Error {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			Self::Alphanumeric => f.debug_struct("Alphanumeric").finish(),
+			Self::Ascii => f.debug_struct("Ascii").finish(),
+			Self::Contains(value) => f.debug_tuple("Contains").field(&value.to_string()).finish(),
+			Self::Email(err) => f.debug_tuple("Email").field(err).finish(),
+			Self::Url(err) => f.debug_tuple("Url").field(err).finish(),
+			Self::Length(err) => f.debug_tuple("Length").field(err).finish(),
+			Self::Range(err) => f.debug_tuple("Range").field(err).finish(),
+			Self::Custom(err) => f.debug_tuple("Custom").field(err).finish(),
+		}
+	}
 }
 
 pub trait Validate {
@@ -57,28 +79,3 @@ where
 	}
 }
 
-pub struct OrRule<T, U> {
-	left: T,
-	right: U,
-}
-
-impl<T, U> OrRule<T, U> {
-	pub fn new(left: T, right: U) -> Self {
-		Self { left, right }
-	}
-}
-
-impl<T, U> Validate for OrRule<T, U>
-where
-	T: Validate,
-	U: Validate,
-{
-	type Context = (T::Context, U::Context);
-
-	fn validate(&self, ctx: &Self::Context) -> Result<(), Error> {
-		self
-			.left
-			.validate(&ctx.0)
-			.or_else(|_| self.right.validate(&ctx.1))
-	}
-}
