@@ -1,9 +1,10 @@
-use std::borrow::Cow;
-
 use crate::{Error, Validate};
 
+#[doc(hidden)]
+pub type Rule<T> = UrlRule<T>;
+
 pub trait Url {
-	fn url(&self) -> Option<&str>;
+	fn url(&self) -> &str;
 }
 
 pub struct UrlRule<T> {
@@ -23,48 +24,19 @@ where
 	type Context = ();
 
 	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		let Some(url) = self.inner.url() else {
-			return Ok(());
-		};
+		let url = self.inner.url();
 
 		url::Url::parse(url)?;
 		Ok(())
 	}
 }
 
-impl<T> Url for &T
+impl<T> Url for T
 where
-	T: Url,
+	T: AsRef<str>,
 {
-	fn url(&self) -> Option<&str> {
-		(**self).url()
-	}
-}
-
-impl<T> Url for Option<T>
-where
-	T: Url,
-{
-	fn url(&self) -> Option<&str> {
-		self.as_ref().and_then(Url::url)
-	}
-}
-
-impl Url for &str {
-	fn url(&self) -> Option<&str> {
-		Some(self)
-	}
-}
-
-impl Url for String {
-	fn url(&self) -> Option<&str> {
-		Some(self)
-	}
-}
-
-impl Url for Cow<'_, str> {
-	fn url(&self) -> Option<&str> {
-		Some(self)
+	fn url(&self) -> &str {
+		self.as_ref()
 	}
 }
 

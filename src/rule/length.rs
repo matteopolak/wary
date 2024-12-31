@@ -1,9 +1,7 @@
-use std::{
-	borrow::Cow,
-	ffi::{OsStr, OsString},
-};
-
 use crate::{Error, Validate};
+
+#[doc(hidden)]
+pub type Rule<T> = LengthRule<T>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum LengthError {
@@ -16,7 +14,7 @@ pub enum LengthError {
 #[diagnostic::on_unimplemented(note = "For string types, wrap the value in `Bytes` or `Chars` to \
                                        get the byte or character length, respectively.")]
 pub trait Length {
-	fn length(&self) -> Option<usize>;
+	fn length(&self) -> usize;
 }
 
 /// Length in bytes for string-like containers.
@@ -74,9 +72,7 @@ where
 	type Context = ();
 
 	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		let Some(len) = self.inner.length() else {
-			return Ok(());
-		};
+		let len = self.inner.length();
 
 		if let Some(min) = self.min {
 			if len < min {
@@ -94,148 +90,60 @@ where
 	}
 }
 
-impl<T> Length for Option<T>
-where
-	T: Length,
-{
-	fn length(&self) -> Option<usize> {
-		self.as_ref().and_then(Length::length)
-	}
-}
-
 impl<T> Length for &T
 where
 	T: Length + ?Sized,
 {
-	fn length(&self) -> Option<usize> {
+	fn length(&self) -> usize {
 		(**self).length()
 	}
 }
 
 impl<const N: usize, T> Length for [T; N] {
 	#[inline]
-	fn length(&self) -> Option<usize> {
-		Some(N)
+	fn length(&self) -> usize {
+		N
 	}
 }
 
 impl<T> Length for [T] {
 	#[inline]
-	fn length(&self) -> Option<usize> {
-		Some(self.len())
+	fn length(&self) -> usize {
+		self.len()
 	}
 }
 
 impl<T> Length for Vec<T> {
 	#[inline]
-	fn length(&self) -> Option<usize> {
+	fn length(&self) -> usize {
 		self.as_slice().length()
 	}
 }
 
-impl<T> Length for Bytes<Option<T>>
+impl<T> Length for Box<[T]> {
+	#[inline]
+	fn length(&self) -> usize {
+		self.as_ref().length()
+	}
+}
+
+impl<T> Length for Bytes<T>
 where
-	for<'a> Bytes<&'a T>: Length,
+	T: AsRef<[u8]>,
 {
 	#[inline]
-	fn length(&self) -> Option<usize> {
-		self.0.as_ref().map(Bytes).length()
+	fn length(&self) -> usize {
+		self.0.as_ref().len()
 	}
 }
 
-impl Length for Bytes<&str> {
-	#[inline]
-	fn length(&self) -> Option<usize> {
-		Some(self.0.len())
-	}
-}
-
-impl Length for Bytes<String> {
-	fn length(&self) -> Option<usize> {
-		Bytes(self.0.as_str()).length()
-	}
-}
-
-impl Length for Bytes<&String> {
-	fn length(&self) -> Option<usize> {
-		Bytes(self.0.as_str()).length()
-	}
-}
-
-impl Length for Bytes<Cow<'_, str>> {
-	fn length(&self) -> Option<usize> {
-		Bytes(self.0.as_ref()).length()
-	}
-}
-
-impl Length for OsStr {
-	fn length(&self) -> Option<usize> {
-		Some(self.len())
-	}
-}
-
-impl Length for OsString {
-	fn length(&self) -> Option<usize> {
-		self.as_os_str().length()
-	}
-}
-
-impl<T> Length for Chars<&T>
+impl<T> Length for Chars<T>
 where
-	T: Length,
+	T: AsRef<str>,
 {
 	#[inline]
-	fn length(&self) -> Option<usize> {
-		self.0.length()
-	}
-}
-
-impl Length for Chars<&str> {
-	#[inline]
-	fn length(&self) -> Option<usize> {
-		Some(self.0.chars().count())
-	}
-}
-
-impl Length for Chars<Option<&str>> {
-	fn length(&self) -> Option<usize> {
-		self.0.map(Chars).length()
-	}
-}
-
-impl Length for Chars<String> {
-	fn length(&self) -> Option<usize> {
-		Chars(self.0.as_str()).length()
-	}
-}
-
-impl Length for Chars<&String> {
-	fn length(&self) -> Option<usize> {
-		Chars(self.0.as_str()).length()
-	}
-}
-
-impl Length for Chars<Option<String>> {
-	fn length(&self) -> Option<usize> {
-		self.0.as_ref().map(Chars).length()
-	}
-}
-
-impl Length for Chars<Option<&String>> {
-	fn length(&self) -> Option<usize> {
-		self.0.map(Chars).length()
-	}
-}
-
-impl Length for Chars<Cow<'_, str>> {
-	fn length(&self) -> Option<usize> {
-		Chars(self.0.as_ref()).length()
-	}
-}
-
-impl Length for Chars<Option<Cow<'_, str>>> {
-	fn length(&self) -> Option<usize> {
-		self.0.as_deref().map(Chars).length()
+	fn length(&self) -> usize {
+		self.0.as_ref().chars().count()
 	}
 }
 

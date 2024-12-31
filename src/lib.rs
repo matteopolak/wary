@@ -1,6 +1,8 @@
 pub mod rule;
 pub mod util;
 
+use std::borrow::Cow;
+
 #[cfg(feature = "derive")]
 pub use wary_derive::*;
 
@@ -20,7 +22,7 @@ pub enum Error {
 	#[error(transparent)]
 	Range(#[from] rule::range::RangeError),
 	#[error("{0}")]
-	Custom(String),
+	Custom(Cow<'static, str>),
 }
 
 pub trait Validate {

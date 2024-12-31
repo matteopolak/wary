@@ -2,8 +2,12 @@ use std::{borrow::Cow, str::FromStr};
 
 use crate::{Error, Validate};
 
+#[doc(hidden)]
+pub type Rule<T> = EmailRule<T>;
+
+/// Used for retrieving a potentially-invalid email address.
 pub trait Email {
-	fn email(&self) -> Option<&str>;
+	fn email(&self) -> &str;
 }
 
 pub struct EmailRule<T> {
@@ -33,45 +37,29 @@ where
 	}
 }
 
+impl<T> Validate for EmailRule<email_address::EmailAddress> {
+	type Context = ();
+
+	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
+		Ok(())
+	}
+}
+
+impl<T> Email for T
+where
+	T: AsRef<str>,
+{
+	fn email(&self) -> &str {
+		self.as_ref()
+	}
+}
+
 impl<T> Email for &T
 where
 	T: Email,
 {
 	fn email(&self) -> Option<&str> {
 		(**self).email()
-	}
-}
-
-impl<T> Email for Option<T>
-where
-	T: Email,
-{
-	fn email(&self) -> Option<&str> {
-		self.as_ref().and_then(Email::email)
-	}
-}
-
-impl Email for &str {
-	fn email(&self) -> Option<&str> {
-		Some(self)
-	}
-}
-
-impl Email for String {
-	fn email(&self) -> Option<&str> {
-		Some(self)
-	}
-}
-
-impl Email for Cow<'_, str> {
-	fn email(&self) -> Option<&str> {
-		Some(self)
-	}
-}
-
-impl Email for email_address::EmailAddress {
-	fn email(&self) -> Option<&str> {
-		Some(self.as_str())
 	}
 }
 
