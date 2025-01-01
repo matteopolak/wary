@@ -5,6 +5,16 @@ fn ungroup(mut ty: &syn::Type) -> &syn::Type {
 	ty
 }
 
+pub fn extract_str(expr: &syn::Expr) -> Option<String> {
+	match expr {
+		syn::Expr::Lit(lit) => match &lit.lit {
+			syn::Lit::Str(str_) => Some(str_.value()),
+			_ => None,
+		},
+		_ => None,
+	}
+}
+
 pub fn extract_option_path(ty: &syn::Type) -> Option<syn::Path> {
 	let path = match ungroup(ty) {
 		syn::Type::Path(ty) => &ty.path,

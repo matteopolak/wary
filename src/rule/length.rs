@@ -23,9 +23,16 @@ pub struct Bytes<T>(pub T);
 /// Length in characters for string-like containers that hold UTF-8.
 pub struct Chars<T>(pub T);
 
+/// Length in UTF-16 code units.
+pub struct CodeUnits<T>(pub T);
+
+/// Length in grapheme clusters.
+#[cfg(feature = "graphemes")]
+pub struct Graphemes<T>(pub T);
+
 pub struct LengthRule<T> {
-	min: Option<usize>,
-	max: Option<usize>,
+	min: usize,
+	max: usize,
 	exclusive_min: bool,
 	exclusive_max: bool,
 	inner: T,
@@ -34,8 +41,8 @@ pub struct LengthRule<T> {
 impl<T> LengthRule<T> {
 	pub fn new(inner: T) -> Self {
 		Self {
-			min: None,
-			max: None,
+			min: usize::MIN,
+			max: usize::MAX,
 			exclusive_min: false,
 			exclusive_max: false,
 			inner,
@@ -68,26 +75,53 @@ impl<T> LengthRule<T> {
 		}
 	}
 
+	pub fn code_units(self) -> LengthRule<CodeUnits<T>>
+	where
+		CodeUnits<T>: Length,
+	{
+		LengthRule {
+			min: self.min,
+			max: self.max,
+			exclusive_min: self.exclusive_min,
+			exclusive_max: self.exclusive_max,
+			inner: CodeUnits(self.inner),
+		}
+	}
+
+	#[cfg(feature = "graphemes")]
+	pub fn graphemes(self) -> LengthRule<Graphemes<T>>
+	where
+		Graphemes<T>: Length,
+	{
+		LengthRule {
+			min: self.min,
+			max: self.max,
+			exclusive_min: self.exclusive_min,
+			exclusive_max: self.exclusive_max,
+			inner: Graphemes(self.inner),
+		}
+	}
+
 	pub fn min(mut self, min: usize) -> Self {
-		self.min = Some(min);
+		self.min = min;
 		self.exclusive_min = false;
 		self
 	}
 
 	pub fn max(mut self, max: usize) -> Self {
-		self.max = Some(max);
+		self.max = max;
 		self.exclusive_max = false;
 		self
 	}
 
 	pub fn exclusive_min(mut self, min: usize) -> Self {
-		self.min = Some(min);
+		self.min = min;
 		self.exclusive_min = true;
 		self
 	}
 
 	pub fn exclusive_max(mut self, max: usize) -> Self {
-		self.max = Some(max);
+		self.max = max;
 		self.exclusive_max = true;
 		self
 	}
@@ -102,16 +136,24 @@ where
 	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
 		let len = self.inner.length();
 
-		if let Some(min) = self.min {
-			if len < min {
-				return Err(LengthError::TooShort { min, actual: len }.into());
-			}
+		if len < self.min {
+			return Err(
+				LengthError::TooShort {
+					min: self.min,
+					actual: len,
+				}
+				.into(),
+			);
 		}
 
-		if let Some(max) = self.max {
-			if len > max {
-				return Err(LengthError::TooLong { max, actual: len }.into());
-			}
+		if len > self.max {
+			return Err(
+				LengthError::TooLong {
+					max: self.max,
+					actual: len,
+				}
+				.into(),
+			);
 		}
 
 		Ok(())
@@ -172,6 +214,28 @@ where
 	#[inline]
 	fn length(&self) -> usize {
 		self.0.as_ref().chars().count()
+	}
+}
+
+impl<T> Length for CodeUnits<T>
+where
+	T: AsRef<str>,
+{
+	#[inline]
+	fn length(&self) -> usize {
+		self.0.as_ref().encode_utf16().count()
+	}
+}
+
+impl<T> Length for Graphemes<T>
+where
+	T: AsRef<str>,
+{
+	#[inline]
+	fn length(&self) -> usize {
+		use unicode_segmentation::UnicodeSegmentation;
+
+		self.0.as_ref().graphemes(true).count()
 	}
 }
 

@@ -28,6 +28,9 @@ pub enum Error {
 	Length(#[from] rule::length::LengthError),
 	#[error(transparent)]
 	Range(#[from] rule::range::RangeError),
+	#[cfg(feature = "semver")]
+	#[error(transparent)]
+	Semver(#[from] semver::Error),
 	#[error("{0}")]
 	Custom(Cow<'static, str>),
 }
@@ -38,10 +41,14 @@ impl fmt::Debug for Error {
 			Self::Alphanumeric => f.debug_struct("Alphanumeric").finish(),
 			Self::Ascii => f.debug_struct("Ascii").finish(),
 			Self::Contains(value) => f.debug_tuple("Contains").field(&value.to_string()).finish(),
+			#[cfg(feature = "email")]
 			Self::Email(err) => f.debug_tuple("Email").field(err).finish(),
+			#[cfg(feature = "url")]
 			Self::Url(err) => f.debug_tuple("Url").field(err).finish(),
 			Self::Length(err) => f.debug_tuple("Length").field(err).finish(),
 			Self::Range(err) => f.debug_tuple("Range").field(err).finish(),
+			#[cfg(feature = "semver")]
+			Self::Semver(err) => f.debug_tuple("Semver").field(err).finish(),
 			Self::Custom(err) => f.debug_tuple("Custom").field(err).finish(),
 		}
 	}
@@ -78,4 +85,3 @@ where
 		(*self).validate(ctx)
 	}
 }
-

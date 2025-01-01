@@ -1,9 +1,8 @@
 use core::fmt;
 use std::marker::PhantomData;
 
-use crate::{Error, Validate};
-
 use super::Unset;
+use crate::{Error, Validate};
 
 #[doc(hidden)]
 pub type Rule<T, C, Mode> = ContainsRule<T, C, Mode>;
@@ -22,7 +21,8 @@ impl<T> ContainsRule<T, Unset, InOrder> {
 		ContainsRule {
 			inner,
 			contains: Unset,
-			mode: 	PhantomData,	}
+			mode: PhantomData,
+		}
 	}
 }
 
@@ -43,7 +43,7 @@ impl<T, C, M> ContainsRule<T, C, M> {
 		ContainsRule {
 			inner: self.inner,
 			contains: self.contains,
-			mode: PhantomData
+			mode: PhantomData,
 		}
 	}
 
@@ -54,7 +54,7 @@ impl<T, C, M> ContainsRule<T, C, M> {
 		ContainsRule {
 			inner: self.inner,
 			contains: self.contains,
-			mode: PhantomData
+			mode: PhantomData,
 		}
 	}
 }
@@ -147,7 +147,7 @@ where
 	}
 }
 
-trait ToSlice {
+pub trait ToSlice {
 	type Item;
 
 	fn to_slice(&self) -> &[Self::Item];

@@ -7,7 +7,7 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::punctuated::Punctuated;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Args(HashMap<syn::Path, Option<syn::Expr>>);
 
 impl ToTokens for Args {
@@ -154,7 +154,7 @@ struct ValidateField {
 	inner: Option<Box<ValidateField>>,
 
 	#[darling(flatten)]
-	builtin: HashMap<syn::Path, Args>,
+	builtin: HashMap<syn::Path, Option<Args>>,
 }
 
 #[derive(Debug, FromField)]
@@ -176,7 +176,7 @@ struct ValidateFieldWrapper {
 	inner: Option<Box<ValidateField>>,
 
 	#[darling(flatten)]
-	builtin: HashMap<syn::Path, Args>,
+	builtin: HashMap<syn::Path, Option<Args>>,
 }
 
 /// Emits method calls with references instead of values.
@@ -195,7 +195,7 @@ impl ToTokens for ArgsRef<'_> {
 
 impl ValidateField {
 	fn to_token_stream(
-		&self,
+		&mut self,
 		crate_name: &syn::Path,
 		field: &TokenStream,
 		ty: &syn::Type,
@@ -210,10 +210,34 @@ impl ValidateField {
 			});
 		}
 
-		for (path, args) in &self.builtin {
-			let args_ref = ArgsRef(args);
+		for (path, args) in &mut self.builtin {
+			let args_ref = args.as_ref().map(ArgsRef);
 			let args: &dyn ToTokens = if path.is_ident("range") {
 				&args_ref
+			} else if path.is_ident("matches") {
+				let key = syn::parse_quote! { pat };
+
+				if let Some(args) = args {
+					if let Some(Some(expr)) = args.0.get(&key) {
+						if let Some(s) = attr::extract_str(expr) {
+							args.0.insert(
+								key,
+								Some(syn::parse_quote! {
+									{
+										static PAT: ::std::sync::LazyLock<#crate_name::rule::matches::Regex> =
+											::std::sync::LazyLock::new(|| {
+												#crate_name::rule::matches::Regex::new(#s).unwrap()
+											});
+
+										&PAT
+									}
+								}),
+							);
+						}
+					}
+				}
+
+				args
 			} else {
 				args
 			};
@@ -225,7 +249,7 @@ impl ValidateField {
 			});
 		}
 
-		if let Some(inner) = &self.inner {
+		if let Some(inner) = &mut self.inner {
 			let inner = inner.to_token_stream(crate_name, &quote!(field), ty, false);
 
 			tokens.extend(quote! {
@@ -256,7 +280,7 @@ impl ValidateField {
 			});
 		}
 
-		for and in &self.and.0 {
+		for and in &mut self.and.0 {
 			let expand = and.to_token_stream(crate_name, field, ty, false);
 
 			tokens.extend(quote! {
@@ -264,7 +288,7 @@ impl ValidateField {
 			});
 		}
 
-		let mut or = self.or.0.iter();
+		let mut or = self.or.0.iter_mut();
 
 		if let Some(or) = or.next() {
 			let expand = or.to_token_stream(crate_name, field, ty, false);
