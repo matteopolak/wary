@@ -1,7 +1,7 @@
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule_ = UrlRule;
+pub type Rule = UrlRule;
 
 pub struct UrlRule;
 
@@ -11,7 +11,7 @@ impl UrlRule {
 	}
 }
 
-impl<I: ?Sized> Rule<I> for UrlRule
+impl<I: ?Sized> crate::Rule<I> for UrlRule
 where
 	I: AsRef<str>,
 {
@@ -27,6 +27,7 @@ where
 #[cfg(test)]
 mod test {
 	use super::*;
+	use crate::Rule;
 
 	#[test]
 	fn test_url() {

@@ -1,29 +1,28 @@
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule_ = AsciiRule;
+pub type Rule = SemverRule;
 
-pub struct AsciiRule;
+pub struct SemverRule;
 
-impl AsciiRule {
+impl SemverRule {
 	pub fn new() -> Self {
 		Self
 	}
 }
 
-impl<I: ?Sized> Rule<I> for AsciiRule
+impl<I: ?Sized> crate::Rule<I> for SemverRule
 where
 	I: AsRef<str>,
 {
 	type Context = ();
 
+	#[inline]
 	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
-		let email = item.as_ref();
+		let version = item.as_ref();
 
-		if email.is_ascii() {
-			Ok(())
-		} else {
-			Err(Error::Ascii)
-		}
+		version.parse::<semver::Version>()?;
+
+		Ok(())
 	}
 }

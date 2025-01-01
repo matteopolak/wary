@@ -1,17 +1,22 @@
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule_ = UppercaseRule;
+pub type Rule = AsciiRule;
 
-pub struct UppercaseRule;
+pub struct AsciiRule;
 
-impl<I: ?Sized> Rule<I> for UppercaseRule
+impl AsciiRule {
+	pub fn new() -> Self {
+		Self
+	}
+}
+
+impl<I: ?Sized> crate::Rule<I> for AsciiRule
 where
 	I: AsRef<str>,
 {
 	type Context = ();
 
-	#[inline]
 	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
 		let email = item.as_ref();
 

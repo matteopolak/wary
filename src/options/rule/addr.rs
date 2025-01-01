@@ -3,7 +3,7 @@ use core::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule_<Mode> = AddrRule<Mode>;
+pub type Rule<Mode> = AddrRule<Mode>;
 
 pub struct Ip;
 pub struct IpV4;
@@ -33,7 +33,7 @@ impl<M> AddrRule<M> {
 	}
 }
 
-impl<I> Rule<I> for AddrRule<IpV4>
+impl<I> crate::Rule<I> for AddrRule<IpV4>
 where
 	I: AsRef<str>,
 {
@@ -50,7 +50,7 @@ where
 	}
 }
 
-impl<I> Rule<I> for AddrRule<IpV6>
+impl<I> crate::Rule<I> for AddrRule<IpV6>
 where
 	I: AsRef<str>,
 {
@@ -67,7 +67,7 @@ where
 	}
 }
 
-impl<I> Rule<I> for AddrRule<Ip>
+impl<I> crate::Rule<I> for AddrRule<Ip>
 where
 	I: AsRef<str>,
 {

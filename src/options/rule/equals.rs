@@ -1,7 +1,7 @@
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule_<O> = EqualsRule<O>;
+pub type Rule<O> = EqualsRule<O>;
 
 pub struct EqualsRule<O> {
 	other: O,
@@ -17,7 +17,7 @@ impl EqualsRule<Unset> {
 	}
 }
 
-impl<I: ?Sized, O> Rule<I> for EqualsRule<O>
+impl<I: ?Sized, O> crate::Rule<I> for EqualsRule<O>
 where
 	I: PartialEq<O>,
 {

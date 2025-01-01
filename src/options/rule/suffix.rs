@@ -1,7 +1,7 @@
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule_<P> = SuffixRule<P>;
+pub type Rule<P> = SuffixRule<P>;
 
 pub struct SuffixRule<P> {
 	suffix: P,
@@ -17,7 +17,7 @@ impl SuffixRule<Unset> {
 	}
 }
 
-impl<I: ?Sized, P, O> Rule<I> for SuffixRule<P>
+impl<I: ?Sized, P, O> crate::Rule<I> for SuffixRule<P>
 where
 	I: AsSlice<Item = O>,
 	P: AsSlice<Item = O>,

@@ -1,11 +1,11 @@
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule_ = AlphanumericRule;
+pub type Rule = AlphanumericRule;
 
 pub struct AlphanumericRule;
 
-impl<I> Rule<I> for AlphanumericRule
+impl<I> crate::Rule<I> for AlphanumericRule
 where
 	I: AsRef<str>,
 {

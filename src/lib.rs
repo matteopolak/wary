@@ -2,7 +2,7 @@
 //#![deny(clippy::print_stdout)]
 
 pub mod error;
-pub mod rule;
+pub mod options;
 pub mod util;
 pub use error::{Error, Report};
 #[cfg(feature = "derive")]
@@ -14,8 +14,20 @@ pub mod toolbox {
 	pub mod rule {
 		pub use core::marker::PhantomData;
 
-		pub use crate::{rule::Unset, AsRef, AsSlice, Error, Report, Rule};
+		pub use crate::{options::Unset, AsRef, AsSlice, Error, Report};
 	}
+}
+
+pub trait Modifier<I: ?Sized> {
+	type Context;
+
+	fn modify(&self, ctx: &Self::Context, item: &mut I);
+}
+
+pub trait Modify {
+	type Context;
+
+	fn modify(&mut self, ctx: &Self::Context);
 }
 
 pub trait Rule<I: ?Sized> {
@@ -87,6 +99,18 @@ where
 	}
 }
 
+impl<T> AsSlice for &mut T
+where
+	T: AsSlice,
+{
+	type Item = T::Item;
+
+	#[inline]
+	fn as_slice(&self) -> &[Self::Item] {
+		(**self).as_slice()
+	}
+}
+
 impl AsSlice for &str {
 	type Item = u8;
 
@@ -138,5 +162,40 @@ impl AsSlice for String {
 	#[inline]
 	fn as_slice(&self) -> &[Self::Item] {
 		self.as_bytes()
+	}
+}
+
+pub trait AsSliceMut: AsSlice {
+	fn as_slice_mut(&mut self) -> &mut [Self::Item];
+}
+
+impl<T> AsSliceMut for &mut T
+where
+	T: AsSliceMut,
+{
+	#[inline]
+	fn as_slice_mut(&mut self) -> &mut [Self::Item] {
+		(**self).as_slice_mut()
+	}
+}
+
+impl<T> AsSliceMut for Vec<T> {
+	#[inline]
+	fn as_slice_mut(&mut self) -> &mut [Self::Item] {
+		self
+	}
+}
+
+impl<T> AsSliceMut for [T] {
+	#[inline]
+	fn as_slice_mut(&mut self) -> &mut [Self::Item] {
+		self
+	}
+}
+
+impl<const N: usize, T> AsSliceMut for [T; N] {
+	#[inline]
+	fn as_slice_mut(&mut self) -> &mut [Self::Item] {
+		self
 	}
 }

@@ -87,9 +87,9 @@ impl ValidateField {
 								key,
 								Some(syn::parse_quote! {
 									{
-										static PAT: ::std::sync::LazyLock<#crate_name::rule::matches::Regex> =
+										static PAT: ::std::sync::LazyLock<#crate_name::options::rule::matches::Regex> =
 											::std::sync::LazyLock::new(|| {
-												#crate_name::rule::matches::Regex::new(#s).unwrap()
+												#crate_name::options::rule::matches::Regex::new(#s).unwrap()
 											});
 
 										&PAT
@@ -107,7 +107,7 @@ impl ValidateField {
 
 			tokens.extend(quote! {
 				#crate_name::Rule::validate(
-					&#crate_name::rule::#path::Rule_::new() #args,
+					&#crate_name::options::rule::#path::Rule::new() #args,
 					&(),
 					#field
 				)?;
@@ -119,7 +119,7 @@ impl ValidateField {
 
 			tokens.extend(quote! {
 				#crate_name::Rule::validate(
-					&#crate_name::rule::inner::Rule_::new(|field| {
+					&#crate_name::options::rule::inner::Rule::new(|field| {
 						#inner
 
 						Ok::<(), #crate_name::Error>(())

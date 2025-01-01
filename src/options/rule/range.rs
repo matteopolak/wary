@@ -3,7 +3,7 @@ use std::{borrow::Cow, cmp::Ordering};
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule_<Min, Max> = RangeRule<Min, Max>;
+pub type Rule<Min, Max> = RangeRule<Min, Max>;
 
 #[derive(Debug, Clone, Copy, thiserror::Error)]
 pub enum RangeError {
@@ -75,7 +75,7 @@ impl<Min> RangeRule<Min, Unset> {
 	}
 }
 
-impl<I: ?Sized, Min, Max> Rule<I> for RangeRule<Min, Max>
+impl<I: ?Sized, Min, Max> crate::Rule<I> for RangeRule<Min, Max>
 where
 	I: Compare<Min> + Compare<Max>,
 {
@@ -162,6 +162,7 @@ impl Compare<&&str> for &'_ String {
 #[cfg(test)]
 mod test {
 	use super::*;
+	use crate::Rule;
 
 	#[test]
 	fn test_integer_range() {

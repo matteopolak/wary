@@ -1,7 +1,7 @@
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule_<T> = LengthRule<T>;
+pub type Rule<T> = LengthRule<T>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum LengthError {
@@ -128,7 +128,7 @@ impl<Mode> LengthRule<Mode> {
 	}
 }
 
-impl<I: ?Sized> Rule<I> for LengthRule<Unset>
+impl<I: ?Sized> crate::Rule<I> for LengthRule<Unset>
 where
 	I: Length,
 {
@@ -141,7 +141,7 @@ where
 	}
 }
 
-impl<I: ?Sized> Rule<I> for LengthRule<Bytes>
+impl<I: ?Sized> crate::Rule<I> for LengthRule<Bytes>
 where
 	for<'d> BytesLength<'d, I>: Length,
 {
@@ -154,7 +154,7 @@ where
 	}
 }
 
-impl<I: ?Sized> Rule<I> for LengthRule<Chars>
+impl<I: ?Sized> crate::Rule<I> for LengthRule<Chars>
 where
 	for<'d> CharsLength<'d, I>: Length,
 {
@@ -167,7 +167,7 @@ where
 	}
 }
 
-impl<I: ?Sized> Rule<I> for LengthRule<CodeUnits>
+impl<I: ?Sized> crate::Rule<I> for LengthRule<CodeUnits>
 where
 	for<'d> CodeUnitsLength<'d, I>: Length,
 {
@@ -181,7 +181,7 @@ where
 }
 
 #[cfg(feature = "graphemes")]
-impl<I: ?Sized> Rule<I> for LengthRule<Graphemes>
+impl<I: ?Sized> crate::Rule<I> for LengthRule<Graphemes>
 where
 	for<'d> GraphemesLength<'d, I>: Length,
 {
@@ -296,6 +296,7 @@ where
 #[cfg(test)]
 mod test {
 	use super::*;
+	use crate::Rule;
 
 	#[test]
 	fn test_string_length() {

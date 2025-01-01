@@ -3,7 +3,7 @@ use core::fmt;
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule_<C, Mode> = ContainsRule<C, Mode>;
+pub type Rule<C, Mode> = ContainsRule<C, Mode>;
 
 pub struct InOrder;
 pub struct AnyOrder;
@@ -89,7 +89,7 @@ where
 	}
 }
 
-impl<I, C, O> Rule<I> for ContainsRule<C, InOrder>
+impl<I, C, O> crate::Rule<I> for ContainsRule<C, InOrder>
 where
 	I: AsSlice<Item = O>,
 	C: AsSlice<Item = O>,
@@ -118,7 +118,7 @@ where
 	}
 }
 
-impl<I, C, O> Rule<I> for ContainsRule<C, AnyOrder>
+impl<I, C, O> crate::Rule<I> for ContainsRule<C, AnyOrder>
 where
 	I: AsSlice<Item = O>,
 	C: AsSlice<Item = O>,

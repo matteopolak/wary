@@ -1,6 +1,6 @@
 use darling::{ast, FromDeriveInput};
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens};
+use quote::quote;
 
 use crate::{
 	modify::{Modify, ModifyFieldWrapper, ModifyVariant},
@@ -37,7 +37,7 @@ pub struct Emit {
 
 impl Emit {
 	pub fn into_token_stream(self) -> TokenStream {
-		let inner = match (self.validate.data, self.modify.data) {
+		match (self.validate.data, self.modify.data) {
 			(ast::Data::Enum(validate), ast::Data::Enum(modify)) => EmitEnum {
 				options: &self.options,
 				validate,
@@ -51,23 +51,6 @@ impl Emit {
 			}
 			.into_token_stream(),
 			_ => unimplemented!(),
-		};
-
-		let (imp, ty, wher) = self.options.generics.split_for_impl();
-		let crate_name = &self.options.crate_name;
-		let context = &self.options.context;
-		let ident = &self.options.ident;
-
-		quote! {
-			impl #imp #crate_name::Validate for #ident #ty #wher {
-				type Context = #context;
-
-				fn validate(&self, ctx: &Self::Context) -> Result<(), #crate_name::Error> {
-					#inner
-
-					Ok(())
-				}
-			}
 		}
 	}
 }
@@ -94,7 +77,7 @@ struct EmitEnum<'o> {
 
 impl EmitEnum<'_> {
 	fn into_token_stream(self) -> TokenStream {
-		let variants = self.validate.into_iter().zip(self.modify).map(|(v, m)| {
+		let validate = self.validate.into_iter().map(|v| {
 			let destruct = Fields(&v.fields).destruct();
 			let ident = v.ident.clone();
 
@@ -113,12 +96,56 @@ impl EmitEnum<'_> {
 			}
 		});
 
+		let modify = self.modify.into_iter().map(|m| {
+			let destruct = Fields(&m.fields).destruct();
+			let ident = m.ident.clone();
+
+			let fields = Fields(&m.fields)
+				.idents()
+				.into_iter()
+				.zip(m.fields)
+				.map(|(field, m)| m.into_token_stream(&self.options.crate_name, &field));
+
+			quote! {
+				Self::#ident { #destruct } => {
+					#(
+						#fields
+					)*
+				}
+			}
+		});
+
+		let (imp, ty, wher) = self.options.generics.split_for_impl();
+		let crate_name = &self.options.crate_name;
+		let context = &self.options.context;
+		let ident = &self.options.ident;
+
 		quote! {
-			match self {
-				#(
-					#variants
-				)*
-			};
+			impl #imp #crate_name::Validate for #ident #ty #wher {
+				type Context = #context;
+
+				fn validate(&self, ctx: &Self::Context) -> Result<(), #crate_name::Error> {
+					match self {
+						#(
+							#validate
+						)*
+					};
+
+					Ok(())
+				}
+			}
+
+			impl #imp #crate_name::Modify for #ident #ty #wher {
+				type Context = #context;
+
+				fn modify(&mut self, ctx: &Self::Context) {
+					match self {
+						#(
+							#modify
+						)*
+					};
+				}
+			}
 		}
 	}
 }
@@ -132,24 +159,51 @@ struct EmitStruct<'o> {
 impl EmitStruct<'_> {
 	fn into_token_stream(self) -> TokenStream {
 		let destruct = Fields(&self.validate).destruct();
+		let idents = Fields(&self.validate).idents();
 
-		let fields = self
+		let validate = self
 			.validate
 			.into_iter()
-			.zip(self.modify)
-			.enumerate()
-			.map(|(i, (v, m))| {
-				let ident = v.ident.clone().unwrap_or_else(|| format_ident!("_{i}"));
+			.zip(&idents)
+			.map(|(v, i)| v.into_token_stream(&self.options.crate_name, i));
 
-				v.into_token_stream(&self.options.crate_name, &ident)
-			});
+		let modify = self
+			.modify
+			.into_iter()
+			.zip(&idents)
+			.map(|(m, i)| m.into_token_stream(&self.options.crate_name, i));
+
+		let (imp, ty, wher) = self.options.generics.split_for_impl();
+		let crate_name = &self.options.crate_name;
+		let context = &self.options.context;
+		let ident = &self.options.ident;
 
 		quote! {
-			let Self { #destruct } = self;
+			impl #imp #crate_name::Validate for #ident #ty #wher {
+				type Context = #context;
 
-			#(
-				#fields
-			)*
+				fn validate(&self, ctx: &Self::Context) -> Result<(), #crate_name::Error> {
+					let Self { #destruct } = self;
+
+					#(
+						#validate
+					)*
+
+					Ok(())
+				}
+			}
+
+			impl #imp #crate_name::Modify for #ident #ty #wher {
+				type Context = #context;
+
+				fn modify(&mut self, ctx: &Self::Context) {
+					let Self { #destruct } = self;
+
+					#(
+						#modify
+					)*
+				}
+			}
 		}
 	}
 }

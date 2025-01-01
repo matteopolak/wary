@@ -3,7 +3,7 @@ mod path;
 use core::fmt;
 use std::borrow::Cow;
 
-use crate::rule;
+use crate::options::rule;
 
 #[derive(thiserror::Error)]
 #[non_exhaustive]

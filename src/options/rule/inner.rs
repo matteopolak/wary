@@ -1,7 +1,7 @@
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule_<F> = InnerRule<F>;
+pub type Rule<F> = InnerRule<F>;
 
 pub struct InnerRule<F> {
 	validate: F,
@@ -13,7 +13,7 @@ impl<F> InnerRule<F> {
 	}
 }
 
-impl<I: ?Sized, O, F> Rule<I> for InnerRule<F>
+impl<I: ?Sized, O, F> crate::Rule<I> for InnerRule<F>
 where
 	I: AsSlice<Item = O>,
 	F: Fn(&O) -> Result<(), Error>,

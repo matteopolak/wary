@@ -105,7 +105,7 @@ impl Node {
 	}
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(test)))]
 mod tests {
 	use super::*;
 

@@ -3,7 +3,7 @@ use core::str::FromStr;
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule_ = EmailRule;
+pub type Rule = EmailRule;
 
 pub struct EmailRule;
 
@@ -13,7 +13,7 @@ impl EmailRule {
 	}
 }
 
-impl<I: ?Sized> Rule<I> for EmailRule
+impl<I: ?Sized> crate::Rule<I> for EmailRule
 where
 	I: AsRef<str>,
 {
@@ -31,12 +31,11 @@ where
 #[cfg(test)]
 mod test {
 	use super::*;
+	use crate::Rule;
 
 	#[test]
 	fn test_email() {
 		let email = "hello@gmail.com";
-
-		let s = AsRef::<str>::as_ref(email);
 
 		let rule = EmailRule::new();
 		assert!(rule.validate(&(), email).is_ok());

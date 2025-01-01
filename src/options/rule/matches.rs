@@ -1,7 +1,7 @@
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule_<M> = MatchesRule<M>;
+pub type Rule<M> = MatchesRule<M>;
 
 pub struct MatchesRule<M> {
 	matcher: M,
@@ -17,7 +17,7 @@ impl MatchesRule<Unset> {
 	}
 }
 
-impl<I: ?Sized> Rule<I> for MatchesRule<&'_ Regex>
+impl<I: ?Sized> crate::Rule<I> for MatchesRule<&'_ Regex>
 where
 	I: AsRef<str>,
 {
