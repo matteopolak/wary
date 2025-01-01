@@ -9,8 +9,8 @@ mod modify;
 mod util;
 mod validate;
 
-#[proc_macro_derive(Validate, attributes(validate, modify, wary, serde))]
-pub fn validate(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+#[proc_macro_derive(Wary, attributes(validate, modify, wary, serde))]
+pub fn wary(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 	let input = syn::parse_macro_input!(input as syn::DeriveInput);
 
 	match Emit::from_derive_input(&input) {

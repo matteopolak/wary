@@ -18,15 +18,23 @@ pub mod toolbox {
 	}
 }
 
+pub trait Wary: Validate + Modify {
+	fn analyze(&mut self, ctx: &Self::Context) -> Result<(), Error> {
+		self.validate(ctx)?;
+		self.modify(ctx);
+		Ok(())
+	}
+}
+
+impl<T> Wary for T where T: Validate + Modify {}
+
 pub trait Modifier<I: ?Sized> {
 	type Context;
 
 	fn modify(&self, ctx: &Self::Context, item: &mut I);
 }
 
-pub trait Modify {
-	type Context;
-
+pub trait Modify: Validate {
 	fn modify(&mut self, ctx: &Self::Context);
 }
 

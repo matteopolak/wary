@@ -1,13 +1,18 @@
-use wary::Validate;
+use wary::{Modify, Validate, Wary};
 
-#[derive(Validate)]
+#[derive(Wary)]
 pub struct HelloEnum {
-	#[validate(email, length(graphemes, 1..=10))]
+	#[validate(length(graphemes, 1..=10))]
+	#[modify(uppercase)]
 	stuff: String,
 }
 
 fn main() {
-	HelloEnum { stuff: "".into() }.validate(&()).unwrap();
+	let mut hello = HelloEnum {
+		stuff: "hello".into(),
+	};
 
-	println!("Hello, world!");
+	hello.analyze(&()).unwrap();
+
+	println!("{}", hello.stuff);
 }

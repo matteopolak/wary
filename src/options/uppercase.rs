@@ -1,11 +1,19 @@
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule = UppercaseRule;
+pub type Rule = Uppercase;
+#[doc(hidden)]
+pub type Modifier = Uppercase;
 
-pub struct UppercaseRule;
+pub struct Uppercase;
 
-impl<I: ?Sized> crate::Rule<I> for UppercaseRule
+impl Uppercase {
+	pub fn new() -> Self {
+		Self
+	}
+}
+
+impl<I: ?Sized> crate::Rule<I> for Uppercase
 where
 	I: AsRef<str>,
 {
@@ -23,7 +31,7 @@ where
 	}
 }
 
-impl crate::Modifier<String> for UppercaseRule {
+impl crate::Modifier<String> for Uppercase {
 	type Context = ();
 
 	#[inline]
