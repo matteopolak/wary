@@ -2,6 +2,10 @@
 name = "wary_derive"
 version = "0.0.1"
 edition = "2021"
+description = "Procedural macros for wary"
+license = "MIT OR Apache-2.0"
+authors = ["Matthew Polak <contact@matteopolak.com>"]
+repository = "https://github.com/matteopolak/wary"
 
 [lib]
 proc-macro = true
