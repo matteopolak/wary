@@ -1,38 +1,23 @@
-use crate::{Error, Validate};
+use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule<T> = AlphanumericRule<T>;
+pub type Rule_ = AlphanumericRule;
 
-pub trait Alphanumeric {
-	fn alphanumeric(&self) -> &str;
-}
+pub struct AlphanumericRule;
 
-pub struct AlphanumericRule<T> {
-	inner: T,
-}
-
-impl<T> Validate for AlphanumericRule<T>
+impl<I> Rule<I> for AlphanumericRule
 where
-	T: Alphanumeric,
+	I: AsRef<str>,
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		let email = self.inner.alphanumeric();
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		let email = item.as_ref();
 
 		if email.chars().all(|c| c.is_alphanumeric()) {
 			Ok(())
 		} else {
 			Err(Error::Alphanumeric)
 		}
-	}
-}
-
-impl<T> Alphanumeric for T
-where
-	T: AsRef<str>,
-{
-	fn alphanumeric(&self) -> &str {
-		self.as_ref()
 	}
 }

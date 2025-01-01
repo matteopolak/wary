@@ -1,57 +1,27 @@
+#![allow(clippy::new_without_default)]
+//#![deny(clippy::print_stdout)]
+
+pub mod error;
 pub mod rule;
 pub mod util;
-
-use core::fmt;
-use std::borrow::Cow;
-
+pub use error::{Error, Report};
 #[cfg(feature = "derive")]
 pub use wary_derive::*;
 
 pub struct Transcript;
 
-#[derive(thiserror::Error)]
-#[non_exhaustive]
-pub enum Error {
-	#[error("value is not alphanumeric")]
-	Alphanumeric,
-	#[error("value is not ascii")]
-	Ascii,
-	#[error("value does not contain {0}")]
-	Contains(Box<dyn std::fmt::Display>),
-	#[cfg(feature = "email")]
-	#[error(transparent)]
-	Email(#[from] email_address::Error),
-	#[cfg(feature = "url")]
-	#[error(transparent)]
-	Url(#[from] url::ParseError),
-	#[error(transparent)]
-	Length(#[from] rule::length::LengthError),
-	#[error(transparent)]
-	Range(#[from] rule::range::RangeError),
-	#[cfg(feature = "semver")]
-	#[error(transparent)]
-	Semver(#[from] semver::Error),
-	#[error("{0}")]
-	Custom(Cow<'static, str>),
+pub mod toolbox {
+	pub mod rule {
+		pub use core::marker::PhantomData;
+
+		pub use crate::{rule::Unset, AsRef, AsSlice, Error, Report, Rule};
+	}
 }
 
-impl fmt::Debug for Error {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		match self {
-			Self::Alphanumeric => f.debug_struct("Alphanumeric").finish(),
-			Self::Ascii => f.debug_struct("Ascii").finish(),
-			Self::Contains(value) => f.debug_tuple("Contains").field(&value.to_string()).finish(),
-			#[cfg(feature = "email")]
-			Self::Email(err) => f.debug_tuple("Email").field(err).finish(),
-			#[cfg(feature = "url")]
-			Self::Url(err) => f.debug_tuple("Url").field(err).finish(),
-			Self::Length(err) => f.debug_tuple("Length").field(err).finish(),
-			Self::Range(err) => f.debug_tuple("Range").field(err).finish(),
-			#[cfg(feature = "semver")]
-			Self::Semver(err) => f.debug_tuple("Semver").field(err).finish(),
-			Self::Custom(err) => f.debug_tuple("Custom").field(err).finish(),
-		}
-	}
+pub trait Rule<I: ?Sized> {
+	type Context;
+
+	fn validate(&self, ctx: &Self::Context, item: &I) -> Result<(), Error>;
 }
 
 pub trait Validate {
@@ -66,6 +36,7 @@ where
 {
 	type Context = T::Context;
 
+	#[inline]
 	fn validate(&self, ctx: &Self::Context) -> Result<(), Error> {
 		if let Some(inner) = self {
 			inner.validate(ctx)
@@ -81,7 +52,91 @@ where
 {
 	type Context = T::Context;
 
+	#[inline]
 	fn validate(&self, ctx: &Self::Context) -> Result<(), Error> {
 		(*self).validate(ctx)
+	}
+}
+
+pub trait AsRef<T: ?Sized> {
+	fn as_ref(&self) -> &T;
+}
+
+impl<To: ?Sized, From: core::convert::AsRef<To> + ?Sized> AsRef<To> for From {
+	#[inline]
+	fn as_ref(&self) -> &To {
+		self.as_ref()
+	}
+}
+
+pub trait AsSlice {
+	type Item;
+
+	fn as_slice(&self) -> &[Self::Item];
+}
+
+impl<T> AsSlice for &T
+where
+	T: AsSlice,
+{
+	type Item = T::Item;
+
+	#[inline]
+	fn as_slice(&self) -> &[Self::Item] {
+		(**self).as_slice()
+	}
+}
+
+impl AsSlice for &str {
+	type Item = u8;
+
+	#[inline]
+	fn as_slice(&self) -> &[Self::Item] {
+		self.as_bytes()
+	}
+}
+
+impl<T> AsSlice for Vec<T> {
+	type Item = T;
+
+	#[inline]
+	fn as_slice(&self) -> &[Self::Item] {
+		self
+	}
+}
+
+impl<T> AsSlice for [T] {
+	type Item = T;
+
+	#[inline]
+	fn as_slice(&self) -> &[Self::Item] {
+		self
+	}
+}
+
+impl<const N: usize, T> AsSlice for [T; N] {
+	type Item = T;
+
+	#[inline]
+	fn as_slice(&self) -> &[Self::Item] {
+		self
+	}
+}
+
+impl AsSlice for str {
+	type Item = u8;
+
+	#[inline]
+	fn as_slice(&self) -> &[Self::Item] {
+		self.as_bytes()
+	}
+}
+
+impl AsSlice for String {
+	type Item = u8;
+
+	#[inline]
+	fn as_slice(&self) -> &[Self::Item] {
+		self.as_bytes()
 	}
 }

@@ -1,40 +1,30 @@
-use crate::{Error, Validate};
-
-use super::Unset;
+use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule<T, M> = MatchesRule<T, M>;
+pub type Rule_<M> = MatchesRule<M>;
 
-pub struct MatchesRule<T, M> {
-	inner: T,
+pub struct MatchesRule<M> {
 	matcher: M,
 }
 
-impl<T> MatchesRule<T, Unset> {
-	pub fn new(inner: T) -> Self
-	where T: AsRef<str>
- {
-		Self {
-			inner,
-			matcher: Unset,
-		}
+impl MatchesRule<Unset> {
+	pub fn new() -> Self {
+		Self { matcher: Unset }
 	}
 
-	pub fn pat(self, regex: &Regex) -> MatchesRule<T, &Regex> {
-		MatchesRule {
-			inner: self.inner,
-			matcher: regex,
-		}
+	pub fn pat(self, regex: &Regex) -> MatchesRule<&Regex> {
+		MatchesRule { matcher: regex }
 	}
 }
 
-impl<T> Validate for MatchesRule<T, &'_ Regex>
-	where T: AsRef<str>
+impl<I: ?Sized> Rule<I> for MatchesRule<&'_ Regex>
+where
+	I: AsRef<str>,
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		if self.matcher.is_match(self.inner.as_ref()) {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		if self.matcher.is_match(item.as_ref()) {
 			Ok(())
 		} else {
 			panic!()
@@ -44,4 +34,3 @@ impl<T> Validate for MatchesRule<T, &'_ Regex>
 
 #[doc(hidden)]
 pub use regex::Regex;
-

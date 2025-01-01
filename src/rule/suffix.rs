@@ -1,43 +1,34 @@
-use super::{contains::ToSlice, Unset};
-use crate::{Error, Validate};
+use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule<T, P> = SuffixRule<T, P>;
+pub type Rule_<P> = SuffixRule<P>;
 
-pub struct SuffixRule<T, P> {
-	inner: T,
+pub struct SuffixRule<P> {
 	suffix: P,
 }
 
-impl<T> SuffixRule<T, Unset> {
-	pub fn new(inner: T) -> Self {
-		Self {
-			inner,
-			suffix: Unset,
-		}
+impl SuffixRule<Unset> {
+	pub fn new() -> Self {
+		Self { suffix: Unset }
+	}
+
+	pub fn suffix<P>(self, suffix: P) -> SuffixRule<P> {
+		SuffixRule { suffix }
 	}
 }
 
-impl<T> SuffixRule<T, Unset> {
-	pub fn suffix<P>(self, suffix: P) -> SuffixRule<T, P> {
-		SuffixRule {
-			inner: self.inner,
-			suffix,
-		}
-	}
-}
-
-impl<T, P, I> Validate for SuffixRule<T, P>
+impl<I: ?Sized, P, O> Rule<I> for SuffixRule<P>
 where
-	T: ToSlice<Item = I>,
-	P: ToSlice<Item = I>,
-	I: PartialEq,
+	I: AsSlice<Item = O>,
+	P: AsSlice<Item = O>,
+	O: PartialEq,
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		let inner = self.inner.to_slice();
-		let suffix = self.suffix.to_slice();
+	#[inline]
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		let inner = item.as_slice();
+		let suffix = self.suffix.as_slice();
 
 		if inner.ends_with(suffix) {
 			Ok(())

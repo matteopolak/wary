@@ -32,6 +32,7 @@ pub mod prefix;
 pub mod semver;
 #[cfg(feature = "semver")]
 pub mod suffix;
+pub mod uppercase;
 
 // for auto-complete
 pub mod func {}

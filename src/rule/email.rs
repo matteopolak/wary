@@ -1,46 +1,30 @@
-use std::str::FromStr;
+use core::str::FromStr;
 
-use crate::{Error, Validate};
+use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule<T> = EmailRule<T>;
+pub type Rule_ = EmailRule;
 
-/// Used for retrieving a potentially-invalid email address.
-pub trait Email {
-	fn email(&self) -> &str;
-}
+pub struct EmailRule;
 
-pub struct EmailRule<T> {
-	inner: T,
-}
-
-impl<T> EmailRule<T> {
-	pub fn new(inner: T) -> Self {
-		Self { inner }
+impl EmailRule {
+	pub fn new() -> Self {
+		Self
 	}
 }
 
-impl<T> Validate for EmailRule<T>
+impl<I: ?Sized> Rule<I> for EmailRule
 where
-	T: Email,
+	I: AsRef<str>,
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		let email = self.inner.email();
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		let email = item.as_ref();
 
 		// TODO: Look into avoiding the allocation
 		email_address::EmailAddress::from_str(email)?;
 		Ok(())
-	}
-}
-
-impl<T> Email for T
-where
-	T: AsRef<str>,
-{
-	fn email(&self) -> &str {
-		self.as_ref()
 	}
 }
 
@@ -52,10 +36,12 @@ mod test {
 	fn test_email() {
 		let email = "hello@gmail.com";
 
-		let rule = EmailRule::new(email);
-		assert!(rule.validate(&()).is_ok());
+		let s = AsRef::<str>::as_ref(email);
 
-		let rule = EmailRule::new("invalid");
-		assert!(rule.validate(&()).is_err());
+		let rule = EmailRule::new();
+		assert!(rule.validate(&(), email).is_ok());
+
+		let rule = EmailRule::new();
+		assert!(rule.validate(&(), "invalid").is_err());
 	}
 }

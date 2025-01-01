@@ -1,29 +1,27 @@
-use crate::{Error, Validate};
+use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule<'d, T, F> = InnerRule<'d, T, F>;
+pub type Rule_<F> = InnerRule<F>;
 
-pub struct InnerRule<'d, T, F> {
-	inner: &'d [T],
+pub struct InnerRule<F> {
 	validate: F,
 }
 
-impl<'d, T, F> InnerRule<'d, T, F> {
-	pub fn new(inner: &'d [T], validate: F) -> Self
-	where F: Fn(&T) -> Result<(), Error>,
-	{
-		Self { inner, validate }
+impl<F> InnerRule<F> {
+	pub fn new(validate: F) -> Self {
+		Self { validate }
 	}
 }
 
-impl<T, F> Validate for InnerRule<'_, T, F>
+impl<I: ?Sized, O, F> Rule<I> for InnerRule<F>
 where
-	F: Fn(&T) -> Result<(), Error>,
+	I: AsSlice<Item = O>,
+	F: Fn(&O) -> Result<(), Error>,
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		for item in self.inner {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		for item in item.as_slice() {
 			(self.validate)(item)?;
 		}
 

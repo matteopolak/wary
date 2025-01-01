@@ -1,46 +1,39 @@
-use crate::{Error, Validate};
-
-use super::{contains::ToSlice, Unset};
+use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule<T, P> = PrefixRule<T, P>;
+pub type Rule_<P> = PrefixRule<P>;
 
-pub struct PrefixRule<T, P> {
-	inner: T,
+pub struct PrefixRule<P> {
 	prefix: P,
 }
 
-impl<T> PrefixRule<T, Unset> {
-	pub fn new(inner: T) -> Self {
-		Self { inner, prefix: Unset }
+impl PrefixRule<Unset> {
+	pub fn new() -> Self {
+		Self { prefix: Unset }
+	}
+
+	pub fn prefix<P>(self, prefix: P) -> PrefixRule<P> {
+		PrefixRule { prefix }
 	}
 }
 
-impl<T> PrefixRule<T, Unset> {
-	pub fn prefix<P>(self, prefix: P) -> PrefixRule<T, P> {
-		PrefixRule {
-			inner: self.inner,
-			prefix,
-		}
-	}
-}
-
-impl<T, P, I> Validate for PrefixRule<T, P>
+impl<I: ?Sized, P, O> Rule<I> for PrefixRule<P>
 where
-	T: ToSlice<Item = I>,
-	P: ToSlice<Item = I>,
-	I: PartialEq
+	I: AsSlice<Item = O>,
+	P: AsSlice<Item = O>,
+	O: PartialEq,
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		let inner = self.inner.to_slice();
-		let prefix = self.prefix.to_slice();
+	#[inline]
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		let inner = item.as_slice();
+		let prefix = self.prefix.as_slice();
 
 		if inner.starts_with(prefix) {
 			Ok(())
 		} else {
-		panic!()
+			panic!()
 		}
 	}
 }

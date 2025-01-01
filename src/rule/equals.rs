@@ -1,40 +1,31 @@
-use super::Unset;
-use crate::{Error, Validate};
+use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule<T, O> = EqualsRule<T, O>;
+pub type Rule_<O> = EqualsRule<O>;
 
-pub struct EqualsRule<T, O> {
-	inner: T,
+pub struct EqualsRule<O> {
 	other: O,
 }
 
-impl<T> EqualsRule<T, Unset> {
-	pub fn new(inner: T) -> EqualsRule<T, Unset> {
-		EqualsRule {
-			inner,
-			other: Unset,
-		}
+impl EqualsRule<Unset> {
+	pub fn new() -> EqualsRule<Unset> {
+		EqualsRule { other: Unset }
+	}
+
+	pub fn other<O>(self, other: O) -> EqualsRule<O> {
+		EqualsRule { other }
 	}
 }
 
-impl<T, O> EqualsRule<T, O> {
-	pub fn other(self, other: O) -> EqualsRule<T, O> {
-		EqualsRule {
-			inner: self.inner,
-			other,
-		}
-	}
-}
-
-impl<T, O> Validate for EqualsRule<T, O>
+impl<I: ?Sized, O> Rule<I> for EqualsRule<O>
 where
-	T: PartialEq<O>,
+	I: PartialEq<O>,
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		if self.inner == self.other {
+	#[inline]
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		if *item == self.other {
 			Ok(())
 		} else {
 			panic!()

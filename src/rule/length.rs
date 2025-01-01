@@ -1,7 +1,7 @@
-use crate::{Error, Validate};
+use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule<T> = LengthRule<T>;
+pub type Rule_<T> = LengthRule<T>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum LengthError {
@@ -11,97 +11,74 @@ pub enum LengthError {
 	TooLong { max: usize, actual: usize },
 }
 
-#[diagnostic::on_unimplemented(note = "For string types, wrap the value in `Bytes` or `Chars` to \
-                                       get the byte or character length, respectively.")]
-pub trait Length {
-	fn length(&self) -> usize;
-}
-
-/// Length in bytes for string-like containers.
-pub struct Bytes<T>(pub T);
-
-/// Length in characters for string-like containers that hold UTF-8.
-pub struct Chars<T>(pub T);
-
-/// Length in UTF-16 code units.
-pub struct CodeUnits<T>(pub T);
-
-/// Length in grapheme clusters.
-#[cfg(feature = "graphemes")]
-pub struct Graphemes<T>(pub T);
-
-pub struct LengthRule<T> {
+pub struct LengthRule<Mode> {
 	min: usize,
 	max: usize,
 	exclusive_min: bool,
 	exclusive_max: bool,
-	inner: T,
+	mode: PhantomData<Mode>,
 }
 
-impl<T> LengthRule<T> {
-	pub fn new(inner: T) -> Self {
+pub struct Bytes;
+pub struct Chars;
+pub struct CodeUnits;
+#[cfg(feature = "graphemes")]
+pub struct Graphemes;
+
+impl LengthRule<Unset> {
+	pub fn new() -> Self {
 		Self {
 			min: usize::MIN,
 			max: usize::MAX,
 			exclusive_min: false,
 			exclusive_max: false,
-			inner,
+			mode: PhantomData,
 		}
 	}
 
-	pub fn chars(self) -> LengthRule<Chars<T>>
-	where
-		Chars<T>: Length,
-	{
+	pub fn chars(self) -> LengthRule<Chars> {
 		LengthRule {
 			min: self.min,
 			max: self.max,
 			exclusive_min: self.exclusive_min,
 			exclusive_max: self.exclusive_max,
-			inner: Chars(self.inner),
+			mode: PhantomData,
 		}
 	}
 
-	pub fn bytes(self) -> LengthRule<Bytes<T>>
-	where
-		Bytes<T>: Length,
-	{
+	pub fn bytes(self) -> LengthRule<Bytes> {
 		LengthRule {
 			min: self.min,
 			max: self.max,
 			exclusive_min: self.exclusive_min,
 			exclusive_max: self.exclusive_max,
-			inner: Bytes(self.inner),
+			mode: PhantomData,
 		}
 	}
 
-	pub fn code_units(self) -> LengthRule<CodeUnits<T>>
-	where
-		CodeUnits<T>: Length,
-	{
+	pub fn code_units(self) -> LengthRule<CodeUnits> {
 		LengthRule {
 			min: self.min,
 			max: self.max,
 			exclusive_min: self.exclusive_min,
 			exclusive_max: self.exclusive_max,
-			inner: CodeUnits(self.inner),
+			mode: PhantomData,
 		}
 	}
 
 	#[cfg(feature = "graphemes")]
-	pub fn graphemes(self) -> LengthRule<Graphemes<T>>
-	where
-		Graphemes<T>: Length,
-	{
+	pub fn graphemes(self) -> LengthRule<Graphemes> {
 		LengthRule {
 			min: self.min,
 			max: self.max,
 			exclusive_min: self.exclusive_min,
 			exclusive_max: self.exclusive_max,
-			inner: Graphemes(self.inner),
+			mode: PhantomData,
 		}
 	}
+}
 
+impl<Mode> LengthRule<Mode> {
 	pub fn min(mut self, min: usize) -> Self {
 		self.min = min;
 		self.exclusive_min = false;
@@ -125,17 +102,8 @@ impl<T> LengthRule<T> {
 		self.exclusive_max = true;
 		self
 	}
-}
 
-impl<T> Validate for LengthRule<T>
-where
-	T: Length,
-{
-	type Context = ();
-
-	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		let len = self.inner.length();
-
+	fn check(&self, len: usize) -> Result<(), Error> {
 		if len < self.min {
 			return Err(
 				LengthError::TooShort {
@@ -159,6 +127,91 @@ where
 		Ok(())
 	}
 }
+
+impl<I: ?Sized> Rule<I> for LengthRule<Unset>
+where
+	I: Length,
+{
+	type Context = ();
+
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		let len = item.length();
+
+		self.check(len)
+	}
+}
+
+impl<I: ?Sized> Rule<I> for LengthRule<Bytes>
+where
+	for<'d> BytesLength<'d, I>: Length,
+{
+	type Context = ();
+
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		let len = BytesLength(item).length();
+
+		self.check(len)
+	}
+}
+
+impl<I: ?Sized> Rule<I> for LengthRule<Chars>
+where
+	for<'d> CharsLength<'d, I>: Length,
+{
+	type Context = ();
+
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		let len = CharsLength(item).length();
+
+		self.check(len)
+	}
+}
+
+impl<I: ?Sized> Rule<I> for LengthRule<CodeUnits>
+where
+	for<'d> CodeUnitsLength<'d, I>: Length,
+{
+	type Context = ();
+
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		let len = CodeUnitsLength(item).length();
+
+		self.check(len)
+	}
+}
+
+#[cfg(feature = "graphemes")]
+impl<I: ?Sized> Rule<I> for LengthRule<Graphemes>
+where
+	for<'d> GraphemesLength<'d, I>: Length,
+{
+	type Context = ();
+
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		let len = GraphemesLength(item).length();
+
+		self.check(len)
+	}
+}
+
+#[diagnostic::on_unimplemented(note = "For string types, wrap the value in `Bytes` or `Chars` to \
+                                       get the byte or character length, respectively.")]
+pub trait Length {
+	fn length(&self) -> usize;
+}
+
+/// Length in bytes for string-like containers.
+pub struct BytesLength<'d, T: ?Sized>(&'d T);
+
+/// Length in characters for string-like containers that hold UTF-8.
+pub struct CharsLength<'d, T: ?Sized>(&'d T);
+
+/// Length in UTF-16 code units.
+pub struct CodeUnitsLength<'d, T: ?Sized>(&'d T);
+
+/// Length in grapheme clusters.
+#[cfg(feature = "graphemes")]
+pub struct GraphemesLength<'d, T: ?Sized>(&'d T);
 
 impl<T> Length for &T
 where
@@ -193,11 +246,11 @@ impl<T> Length for Vec<T> {
 impl<T> Length for Box<[T]> {
 	#[inline]
 	fn length(&self) -> usize {
-		self.as_ref().length()
+		AsRef::as_ref(self).length()
 	}
 }
 
-impl<T> Length for Bytes<T>
+impl<T: ?Sized> Length for BytesLength<'_, T>
 where
 	T: AsRef<[u8]>,
 {
@@ -207,7 +260,7 @@ where
 	}
 }
 
-impl<T> Length for Chars<T>
+impl<T: ?Sized> Length for CharsLength<'_, T>
 where
 	T: AsRef<str>,
 {
@@ -217,7 +270,7 @@ where
 	}
 }
 
-impl<T> Length for CodeUnits<T>
+impl<T: ?Sized> Length for CodeUnitsLength<'_, T>
 where
 	T: AsRef<str>,
 {
@@ -227,7 +280,8 @@ where
 	}
 }
 
-impl<T> Length for Graphemes<T>
+#[cfg(feature = "graphemes")]
+impl<T: ?Sized> Length for GraphemesLength<'_, T>
 where
 	T: AsRef<str>,
 {
@@ -245,37 +299,37 @@ mod test {
 
 	#[test]
 	fn test_string_length() {
-		let rule = LengthRule::new("hello").bytes().min(5).max(5);
-		assert!(rule.validate(&()).is_ok());
+		let rule = LengthRule::new().bytes().min(5).max(5);
+		assert!(rule.validate(&(), "hello").is_ok());
 
-		let rule = LengthRule::new("hello").bytes().min(6).max(6);
-		assert!(rule.validate(&()).is_err());
+		let rule = LengthRule::new().bytes().min(6).max(6);
+		assert!(rule.validate(&(), "hello").is_err());
 
-		let rule = LengthRule::new("hello").chars().min(5).max(5);
-		assert!(rule.validate(&()).is_ok());
+		let rule = LengthRule::new().chars().min(5).max(5);
+		assert!(rule.validate(&(), "hello").is_ok());
 
-		let rule = LengthRule::new("hello").chars().min(6).max(6);
-		assert!(rule.validate(&()).is_err());
+		let rule = LengthRule::new().chars().min(6).max(6);
+		assert!(rule.validate(&(), "hello").is_err());
 
-		let rule = LengthRule::new("😊").chars().min(1).max(1);
-		assert!(rule.validate(&()).is_ok());
+		let rule = LengthRule::new().chars().min(1).max(1);
+		assert!(rule.validate(&(), "😊").is_ok());
 
-		let rule = LengthRule::new("😊").bytes().min(1).max(1);
-		assert!(rule.validate(&()).is_err());
+		let rule = LengthRule::new().bytes().min(1).max(1);
+		assert!(rule.validate(&(), "😊").is_err());
 	}
 
 	#[test]
 	fn test_slice_length() {
-		let rule = LengthRule::new([1u8, 2, 3, 4, 5].as_slice()).min(5).max(5);
-		assert!(rule.validate(&()).is_ok());
+		let rule = LengthRule::new().min(5).max(5);
+		assert!(rule.validate(&(), &[1u8, 2, 3, 4, 5].as_slice()).is_ok());
 
-		let rule = LengthRule::new([1, 2, 3, 4, 5].as_slice()).min(6).max(6);
-		assert!(rule.validate(&()).is_err());
+		let rule = LengthRule::new().min(6).max(6);
+		assert!(rule.validate(&(), &[1, 2, 3, 4, 5].as_slice()).is_err());
 
-		let rule = LengthRule::new(vec![1, 2, 3, 4, 5]).min(5).max(5);
-		assert!(rule.validate(&()).is_ok());
+		let rule = LengthRule::new().min(5).max(5);
+		assert!(rule.validate(&(), &vec![1, 2, 3, 4, 5]).is_ok());
 
-		let rule = LengthRule::new(&[1, 2, 3, 4, 5]).min(6).max(6);
-		assert!(rule.validate(&()).is_err());
+		let rule = LengthRule::new().min(6).max(6);
+		assert!(rule.validate(&(), &[1, 2, 3, 4, 5]).is_err());
 	}
 }

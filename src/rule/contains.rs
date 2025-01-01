@@ -1,47 +1,41 @@
 use core::fmt;
-use std::marker::PhantomData;
 
-use super::Unset;
-use crate::{Error, Validate};
+use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule<T, C, Mode> = ContainsRule<T, C, Mode>;
+pub type Rule_<C, Mode> = ContainsRule<C, Mode>;
 
 pub struct InOrder;
 pub struct AnyOrder;
 
-pub struct ContainsRule<T, C, Mode> {
-	inner: T,
+pub struct ContainsRule<C, Mode> {
 	contains: C,
 	mode: PhantomData<Mode>,
 }
 
-impl<T> ContainsRule<T, Unset, InOrder> {
-	pub fn new(inner: T) -> ContainsRule<T, Unset, InOrder> {
+impl ContainsRule<Unset, InOrder> {
+	pub fn new() -> ContainsRule<Unset, InOrder> {
 		ContainsRule {
-			inner,
 			contains: Unset,
 			mode: PhantomData,
 		}
 	}
 }
 
-impl<T, M> ContainsRule<T, Unset, M> {
-	pub fn item<C>(self, contains: C) -> ContainsRule<T, C, M> {
+impl<M> ContainsRule<Unset, M> {
+	pub fn item<C>(self, contains: C) -> ContainsRule<C, M> {
 		ContainsRule {
-			inner: self.inner,
 			contains,
 			mode: PhantomData,
 		}
 	}
 }
 
-impl<T, C, M> ContainsRule<T, C, M> {
+impl<C, M> ContainsRule<C, M> {
 	/// Validates that all of the items in the `contains` list are in the `inner`
 	/// list in the same order.
-	pub fn in_order(self) -> ContainsRule<T, C, InOrder> {
+	pub fn in_order(self) -> ContainsRule<C, InOrder> {
 		ContainsRule {
-			inner: self.inner,
 			contains: self.contains,
 			mode: PhantomData,
 		}
@@ -50,9 +44,8 @@ impl<T, C, M> ContainsRule<T, C, M> {
 	/// Validates that all of the items in the `contains` list are in the `inner`
 	/// list in any order. Note that this does not enforce the `inner` list to
 	/// contain only the items in the `contains` list.
-	pub fn any_order(self) -> ContainsRule<T, C, AnyOrder> {
+	pub fn any_order(self) -> ContainsRule<C, AnyOrder> {
 		ContainsRule {
-			inner: self.inner,
 			contains: self.contains,
 			mode: PhantomData,
 		}
@@ -96,17 +89,17 @@ where
 	}
 }
 
-impl<T, C, I> Validate for ContainsRule<T, C, InOrder>
+impl<I, C, O> Rule<I> for ContainsRule<C, InOrder>
 where
-	T: ToSlice<Item = I>,
-	C: ToSlice<Item = I>,
-	I: PartialEq + fmt::Display + Clone + 'static,
+	I: AsSlice<Item = O>,
+	C: AsSlice<Item = O>,
+	O: PartialEq + fmt::Display + Clone + 'static,
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		let inner = self.inner.to_slice();
-		let contains = self.contains.to_slice();
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		let inner = item.as_slice();
+		let contains = self.contains.as_slice();
 
 		let Some(first) = contains.first() else {
 			return Ok(());
@@ -125,17 +118,17 @@ where
 	}
 }
 
-impl<T, C, I> Validate for ContainsRule<T, C, AnyOrder>
+impl<I, C, O> Rule<I> for ContainsRule<C, AnyOrder>
 where
-	T: ToSlice<Item = I>,
-	C: ToSlice<Item = I>,
-	I: PartialEq + fmt::Display + Clone + 'static,
+	I: AsSlice<Item = O>,
+	C: AsSlice<Item = O>,
+	O: PartialEq + fmt::Display + Clone + 'static,
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		let inner = self.inner.to_slice();
-		let contains = self.contains.to_slice();
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		let inner = item.as_slice();
+		let contains = self.contains.as_slice();
 
 		for item in contains {
 			if !inner.contains(item) {
@@ -144,70 +137,5 @@ where
 		}
 
 		Ok(())
-	}
-}
-
-pub trait ToSlice {
-	type Item;
-
-	fn to_slice(&self) -> &[Self::Item];
-}
-
-impl<T> ToSlice for &T
-where
-	T: ToSlice,
-{
-	type Item = T::Item;
-
-	fn to_slice(&self) -> &[Self::Item] {
-		(*self).to_slice()
-	}
-}
-
-impl ToSlice for &str {
-	type Item = u8;
-
-	fn to_slice(&self) -> &[Self::Item] {
-		self.as_bytes()
-	}
-}
-
-impl<T> ToSlice for Vec<T> {
-	type Item = T;
-
-	fn to_slice(&self) -> &[Self::Item] {
-		self
-	}
-}
-
-impl<T> ToSlice for [T] {
-	type Item = T;
-
-	fn to_slice(&self) -> &[Self::Item] {
-		self
-	}
-}
-
-impl<const N: usize, T> ToSlice for [T; N] {
-	type Item = T;
-
-	fn to_slice(&self) -> &[Self::Item] {
-		self
-	}
-}
-
-impl ToSlice for str {
-	type Item = u8;
-
-	fn to_slice(&self) -> &[Self::Item] {
-		self.as_bytes()
-	}
-}
-
-impl ToSlice for String {
-	type Item = u8;
-
-	fn to_slice(&self) -> &[Self::Item] {
-		self.as_bytes()
 	}
 }

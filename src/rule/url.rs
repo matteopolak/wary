@@ -1,42 +1,26 @@
-use crate::{Error, Validate};
+use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule<T> = UrlRule<T>;
+pub type Rule_ = UrlRule;
 
-pub trait Url {
-	fn url(&self) -> &str;
-}
+pub struct UrlRule;
 
-pub struct UrlRule<T> {
-	inner: T,
-}
-
-impl<T> UrlRule<T> {
-	pub fn new(inner: T) -> Self {
-		Self { inner }
+impl UrlRule {
+	pub fn new() -> Self {
+		Self
 	}
 }
 
-impl<T> Validate for UrlRule<T>
+impl<I: ?Sized> Rule<I> for UrlRule
 where
-	T: Url,
+	I: AsRef<str>,
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context) -> Result<(), Error> {
-		let url = self.inner.url();
-
-		url::Url::parse(url)?;
+	#[inline]
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+		url::Url::parse(item.as_ref())?;
 		Ok(())
-	}
-}
-
-impl<T> Url for T
-where
-	T: AsRef<str>,
-{
-	fn url(&self) -> &str {
-		self.as_ref()
 	}
 }
 
@@ -46,10 +30,10 @@ mod test {
 
 	#[test]
 	fn test_url() {
-		let url = UrlRule::new("https://example.com");
-		assert!(url.validate(&()).is_ok());
+		let url = UrlRule::new();
+		assert!(url.validate(&(), "https://example.com").is_ok());
 
-		let url = UrlRule::new("example.com");
-		assert!(url.validate(&()).is_err());
+		let url = UrlRule::new();
+		assert!(url.validate(&(), "hello").is_err());
 	}
 }
