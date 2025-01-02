@@ -92,7 +92,7 @@ impl<V: FromMeta> FromMeta for VecMap<syn::Path, V> {
 							FromMeta::from_meta(inner).map_err(|e| e.at_path(path)),
 						))
 					}
-					ast::NestedMeta::Lit(_) => Err(darling::Error::unsupported_format("expression")),
+					ast::NestedMeta::Lit(..) => Err(darling::Error::unsupported_format("expression")),
 				}
 			},
 		);
@@ -210,7 +210,10 @@ impl syn::parse::Parse for Arg {
 					eq_token: eq,
 					value: input.parse()?,
 				})
-			} else if within.peek(syn::token::Comma) || within.peek(syn::token::Paren) {
+			} else if within.peek(syn::token::Comma)
+				|| within.peek(syn::token::Paren)
+				|| within.is_empty()
+			{
 				input.parse::<syn::Path>()?;
 
 				Self::Name(path)
@@ -343,15 +346,48 @@ where
 			.collect()
 	}
 
-	pub fn idents(&self) -> Vec<syn::Ident> {
+	pub fn idents(&self) -> Vec<Field> {
 		self
 			.0
 			.iter()
 			.enumerate()
 			.map(|(i, f)| {
 				f.ident()
-					.map_or_else(|| format_ident!("_{i}"), |f| f.clone())
+					.map_or_else(|| Field::new_index(i), |f| Field::new_ident(f.clone()))
 			})
 			.collect::<Vec<_>>()
+	}
+}
+
+pub enum Field {
+	Ident(syn::Ident),
+	Index(usize),
+}
+
+impl Field {
+	pub fn new_ident(ident: syn::Ident) -> Self {
+		Self::Ident(ident)
+	}
+
+	pub fn new_index(index: usize) -> Self {
+		Self::Index(index)
+	}
+}
+
+impl Field {
+	pub fn path(&self) -> TokenStream {
+		match self {
+			Field::Ident(ident) => ident.to_string().to_token_stream(),
+			Field::Index(index) => index.to_token_stream(),
+		}
+	}
+}
+
+impl ToTokens for Field {
+	fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+		match self {
+			Field::Ident(ident) => ident.to_tokens(tokens),
+			Field::Index(index) => format_ident!("_{}", index).to_tokens(tokens),
+		}
 	}
 }

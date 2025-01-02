@@ -1,5 +1,5 @@
 pub mod rule {
-	pub use super::{custom, func, uppercase};
+	pub use super::{custom, func, uppercase, lowercase};
 
 	pub mod ascii;
 	/// Validates that a string-like value is an email address.
@@ -30,21 +30,24 @@ pub mod rule {
 	pub mod inner;
 	pub use equals as eq;
 	#[cfg(feature = "regex")]
-	pub mod matches;
+	pub mod regex;
 	pub mod prefix;
 	pub mod semver;
 	#[cfg(feature = "semver")]
 	pub mod suffix;
+
+	pub mod dive {}
 }
 
 pub mod modifier {
-	pub use super::{custom, func, uppercase};
+	pub use super::{custom, func, uppercase, lowercase};
 
 	pub mod inner;
 }
 
 // both rule and modifier
 pub mod uppercase;
+pub mod lowercase;
 
 // for auto-complete
 pub mod func {}

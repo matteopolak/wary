@@ -1,7 +1,7 @@
 use darling::{ast, FromDeriveInput, FromField, FromMeta, FromVariant};
 use quote::quote;
 
-use crate::util::{Args, Map};
+use crate::util::{Args, Field, Map};
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(modify))]
@@ -64,7 +64,7 @@ impl ModifyFieldWrapper {
 	pub fn into_token_stream(
 		self,
 		crate_name: &syn::Path,
-		field: &syn::Ident,
+		field: &Field,
 	) -> proc_macro2::TokenStream {
 		let ty = self.ty.clone();
 		self
@@ -78,7 +78,7 @@ impl ModifyField {
 	fn to_token_stream(
 		&mut self,
 		crate_name: &syn::Path,
-		field: &syn::Ident,
+		field: &Field,
 		ty: &syn::Type,
 		top: bool,
 	) -> proc_macro2::TokenStream {

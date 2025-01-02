@@ -3,7 +3,7 @@ use quote::{quote, ToTokens};
 
 use crate::{
 	attr,
-	util::{Args, ArgsRef, Map, Tuple},
+	util::{Args, ArgsRef, Field, Map, Tuple},
 };
 
 #[derive(FromDeriveInput)]
@@ -35,6 +35,8 @@ struct ValidateField {
 	#[darling(default)]
 	inner: Option<Box<ValidateField>>,
 
+	dive: darling::util::Flag,
+
 	#[darling(flatten)]
 	builtin: Map<syn::Path, Option<Args>>,
 }
@@ -57,6 +59,8 @@ pub struct ValidateFieldWrapper {
 	#[darling(default)]
 	inner: Option<Box<ValidateField>>,
 
+	dive: darling::util::Flag,
+
 	#[darling(flatten)]
 	builtin: Map<syn::Path, Option<Args>>,
 }
@@ -66,18 +70,20 @@ impl ValidateField {
 	fn to_token_stream(
 		&mut self,
 		crate_name: &syn::Path,
-		field: &syn::Ident,
+		field: &Field,
 		ty: &syn::Type,
 		top: bool,
 	) -> proc_macro2::TokenStream {
 		let mut tokens = proc_macro2::TokenStream::new();
 		let option_path = crate::attr::extract_option_path(ty);
 
+		let field_path = field.path();
+
 		for (path, args) in self.builtin.iter_mut() {
 			let args_ref = args.as_ref().map(ArgsRef);
 			let args: &dyn ToTokens = if path.is_ident("range") {
 				&args_ref
-			} else if path.is_ident("matches") {
+			} else if path.is_ident("regex") {
 				let key = syn::parse_quote! { pat };
 
 				if let Some(args) = args {
@@ -87,9 +93,9 @@ impl ValidateField {
 								key,
 								Some(syn::parse_quote! {
 									{
-										static PAT: ::std::sync::LazyLock<#crate_name::options::rule::matches::Regex> =
+										static PAT: ::std::sync::LazyLock<#crate_name::options::rule::#path::Regex> =
 											::std::sync::LazyLock::new(|| {
-												#crate_name::options::rule::matches::Regex::new(#s).unwrap()
+												#crate_name::options::rule::#path::Regex::new(#s).unwrap()
 											});
 
 										&PAT
@@ -106,11 +112,13 @@ impl ValidateField {
 			};
 
 			tokens.extend(quote! {
-				#crate_name::Rule::validate(
+				if let Err(e) = #crate_name::Rule::validate(
 					&#crate_name::options::rule::#path::Rule::new() #args,
 					&(),
 					#field
-				)?;
+				) {
+					__wary_report.push(__wary_parent.append(#field_path), e);
+				};
 			});
 		}
 
@@ -118,7 +126,7 @@ impl ValidateField {
 			let inner = inner.to_token_stream(crate_name, field, ty, false);
 
 			tokens.extend(quote! {
-				#crate_name::Rule::validate(
+				if let Err(e) = #crate_name::Rule::validate(
 					&#crate_name::options::rule::inner::Rule::new(|field| {
 						#inner
 
@@ -126,7 +134,9 @@ impl ValidateField {
 					}),
 					&(),
 					#field
-				)?;
+				) {
+					__wary_report.push(__wary_parent.append(#field_path), e);
+				};
 			});
 		}
 
@@ -134,18 +144,22 @@ impl ValidateField {
 			tokens.extend(quote! {
 				{
 					let result: Result<(), #crate_name::Error> = (#func)(ctx, #field);
-					result?;
+					if let Err(e) = result {
+						__wary_report.push(__wary_parent.append(#field_path), e);
+					};
 				}
 			});
 		}
 
 		for (path, args) in self.custom.iter() {
 			tokens.extend(quote! {
-				#crate_name::Rule::validate(
+				if let Err(e) = #crate_name::Rule::validate(
 					&#path::new() #args,
 					ctx,
 					#field
-				)?;
+				) {
+					__wary_report.push(__wary_parent.append(#field_path), e);
+				};
 			});
 		}
 
@@ -183,7 +197,15 @@ impl ValidateField {
 
 		if !self.or.0.is_empty() {
 			tokens.extend(quote! {
-				__wary_last?;
+				if let Err(e) = __wary_last {
+					__wary_report.push(__wary_parent.append(#field_path), e);
+				};
+			});
+		}
+
+		if self.dive.is_present() {
+			tokens.extend(quote! {
+				#crate_name::Validate::validate_into(#field, ctx, &__wary_parent.append(#field_path), __wary_report);
 			});
 		}
 
@@ -210,6 +232,7 @@ impl ValidateFieldWrapper {
 			custom: self.custom,
 			inner: self.inner,
 			builtin: self.builtin,
+			dive: self.dive,
 		}
 	}
 }
@@ -218,7 +241,7 @@ impl ValidateFieldWrapper {
 	pub fn into_token_stream(
 		self,
 		crate_name: &syn::Path,
-		field: &syn::Ident,
+		field: &Field,
 	) -> proc_macro2::TokenStream {
 		let ty = self.ty.clone();
 		self

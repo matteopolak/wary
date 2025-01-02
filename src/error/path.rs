@@ -1,46 +1,64 @@
+use core::fmt;
 use std::sync::Arc;
 
 /// A non-empty singly-linked list with O(1) append and [`Clone`].
-#[derive(Clone)]
-pub struct Path {
-	head: Arc<Node>,
-	tail: Arc<Node>,
+#[derive(Clone, Default)]
+pub enum Path {
+	#[default]
+	Empty,
+	NonEmpty {
+		head: Arc<Node>,
+		tail: Arc<Node>,
+	}
 }
 
-// path1: root
-// path2: root + hello
-// path2: root + bye
-// path3: root + hello + world
-// path3: root + hello + universe
+impl fmt::Debug for Path {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		let mut elems = self.clone().collect().into_iter();
+
+		if let Some(elem) = elems.next() {
+			write!(f, "{}", elem)?;
+		}
+
+		for elem in elems {
+			write!(f, ".{}", elem)?;
+		}
+
+		Ok(())
+	}
+}
 
 impl Path {
 	pub fn new<E: Into<Elem>>(elem: E) -> Self {
 		let node = Arc::new(Node::new(elem));
 
-		Self {
+		Self::NonEmpty {
 			tail: Arc::clone(&node),
 			head: node,
 		}
 	}
 
 	pub fn append<E: Into<Elem>>(&self, elem: E) -> Self {
-		Self {
+		let Self::NonEmpty { tail, head } = self else {
+			return Self::new(elem);
+		};
+
+		Self::NonEmpty {
 			tail: Arc::new(Node {
 				elem: elem.into(),
-				prev: Some(Arc::clone(&self.tail)),
+				prev: Some(Arc::clone(tail)),
 			}),
-			head: Arc::clone(&self.head),
+			head: Arc::clone(head),
 		}
 	}
 
-	pub fn prepend<E: Into<Elem>>(&self, elem: E) -> Self {
-		Self {
-			tail: Arc::clone(&self.tail),
-			head: Arc::new(Node {
-				elem: elem.into(),
-				prev: Some(Arc::clone(&self.head)),
-			}),
-		}
+	// TODO: use smallvec or something if this is too slow
+	/// Collects the path (and reverses it so it's "in order").
+	pub fn collect(self) -> Vec<Elem> {
+		let mut elems = self.into_iter().collect::<Vec<_>>();
+		// the iterator iterates in reverse
+		elems.reverse();
+		elems
 	}
 }
 
@@ -48,8 +66,8 @@ pub struct Iter<'l> {
 	next: Option<&'l Node>,
 }
 
-impl<'l> Iterator for Iter<'l> {
-	type Item = &'l Elem;
+impl Iterator for Iter<'_> {
+	type Item = Elem;
 
 	#[allow(clippy::print_stdout)]
 	fn next(&mut self) -> Option<Self::Item> {
@@ -57,25 +75,37 @@ impl<'l> Iterator for Iter<'l> {
 
 		self.next = node.prev.as_deref();
 
-		Some(&node.elem)
+		Some(node.elem)
 	}
 }
 
 impl<'l> IntoIterator for &'l Path {
 	type IntoIter = Iter<'l>;
-	type Item = &'l Elem;
+	type Item = Elem;
 
 	fn into_iter(self) -> Self::IntoIter {
 		Iter {
-			next: Some(&self.tail),
+			next: match self {
+				Path::NonEmpty { tail, .. } => Some(tail),
+				Path::Empty => None,
+			},
 		}
 	}
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Elem {
 	Key(&'static str),
 	Index(usize),
+}
+
+impl fmt::Display for Elem {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		match self {
+			Self::Key(key) => write!(f, "{}", key),
+			Self::Index(index) => write!(f, "{}", index),
+		}
+	}
 }
 
 impl From<&'static str> for Elem {

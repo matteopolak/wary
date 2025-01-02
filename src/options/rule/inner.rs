@@ -16,11 +16,11 @@ impl<F> InnerRule<F> {
 impl<I: ?Sized, O, F> crate::Rule<I> for InnerRule<F>
 where
 	I: AsSlice<Item = O>,
-	F: Fn(&O) -> Result<(), Error>,
+	F: Fn(&O) -> Result<()>,
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		for item in item.as_slice() {
 			(self.validate)(item)?;
 		}

@@ -18,7 +18,7 @@ where
 	type Context = ();
 
 	#[inline]
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		let version = item.as_ref();
 
 		version.parse::<semver::Version>()?;

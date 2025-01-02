@@ -26,7 +26,7 @@ where
 	type Context = ();
 
 	#[inline]
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		let inner = item.as_slice();
 		let prefix = self.prefix.as_slice();
 

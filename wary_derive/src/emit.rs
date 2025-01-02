@@ -124,14 +124,12 @@ impl EmitEnum<'_> {
 			impl #imp #crate_name::Validate for #ident #ty #wher {
 				type Context = #context;
 
-				fn validate(&self, ctx: &Self::Context) -> Result<(), #crate_name::Error> {
+				fn validate_into(&self, ctx: &Self::Context, __wary_parent: &#crate_name::error::Path, __wary_report: &mut #crate_name::error::Report) {
 					match self {
 						#(
 							#validate
 						)*
 					};
-
-					Ok(())
 				}
 			}
 
@@ -180,14 +178,12 @@ impl EmitStruct<'_> {
 			impl #imp #crate_name::Validate for #ident #ty #wher {
 				type Context = #context;
 
-				fn validate(&self, ctx: &Self::Context) -> Result<(), #crate_name::Error> {
+				fn validate_into(&self, ctx: &Self::Context, __wary_parent: &#crate_name::error::Path, __wary_report: &mut #crate_name::error::Report) {
 					let Self { #destruct } = self;
 
 					#(
 						#validate
 					)*
-
-					Ok(())
 				}
 			}
 

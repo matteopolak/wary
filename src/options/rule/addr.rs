@@ -5,6 +5,16 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule<Mode> = AddrRule<Mode>;
 
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+	#[error("invalid_ip")]
+	InvalidIp,
+	#[error("invalid_ipv4")]
+	InvalidIpv4,
+	#[error("invalid_ipv6")]
+	InvalidIpv6,
+}
+
 pub struct Ip;
 pub struct IpV4;
 pub struct IpV6;
@@ -39,13 +49,13 @@ where
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		let addr = item.as_ref();
 
 		if addr.parse::<Ipv4Addr>().is_ok() {
 			Ok(())
 		} else {
-			panic!()
+			Err(Error::InvalidIpv4.into())
 		}
 	}
 }
@@ -56,13 +66,13 @@ where
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		let addr = item.as_ref();
 
 		if addr.parse::<Ipv6Addr>().is_ok() {
 			Ok(())
 		} else {
-			panic!()
+			Err(Error::InvalidIpv6.into())
 		}
 	}
 }
@@ -73,13 +83,13 @@ where
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		let addr = item.as_ref();
 
 		if addr.parse::<IpAddr>().is_ok() {
 			Ok(())
 		} else {
-			panic!()
+			Err(Error::InvalidIp.into())
 		}
 	}
 }

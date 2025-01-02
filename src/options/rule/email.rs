@@ -19,7 +19,7 @@ where
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		let email = item.as_ref();
 
 		// TODO: Look into avoiding the allocation

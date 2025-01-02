@@ -24,7 +24,7 @@ where
 	type Context = ();
 
 	#[inline]
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		if *item == self.other {
 			Ok(())
 		} else {

@@ -19,9 +19,10 @@ url = { version = "2", optional = true }
 wary_derive = { path = "wary_derive", version = "0.0.1", optional = true }
 semver = { version = "1", optional = true }
 unicode-segmentation = { version = "1", optional = true }
+serde = { version = "1", optional = true }
 
 [features]
-default = ["derive", "full"]
+default = ["derive", "full", "serde"]
 full = ["email", "url", "regex", "semver", "graphemes"]
 
 derive = ["dep:wary_derive"]
@@ -30,4 +31,5 @@ url = ["dep:url"]
 regex = ["dep:regex"]
 semver = ["dep:semver"]
 graphemes = ["dep:unicode-segmentation"]
+serde = ["dep:serde"]
 

@@ -1,18 +1,29 @@
-use wary::{Modify, Validate, Wary};
+use wary::{Wary};
+
+#[derive(Wary)]
+pub struct MyString {
+	#[validate(length(bytes, 1..=5), lowercase(ascii))]
+	thing: String
+}
+
+impl AsRef<str> for MyString {
+	fn as_ref(&self) -> &str {
+	  &self.thing
+	}
+}
 
 #[derive(Wary)]
 pub struct HelloEnum {
-	#[validate(length(graphemes, 1..=10))]
-	#[modify(uppercase)]
-	stuff: String,
+	#[validate(dive, regex(pat = r"efi\d"))]
+	stuff: MyString,
 }
 
 fn main() {
 	let mut hello = HelloEnum {
-		stuff: "hello".into(),
+		stuff: MyString { thing: "hellosjhsdlkjfJshdf".into() },
 	};
 
-	hello.analyze(&()).unwrap();
+	let report = hello.analyze(&()).unwrap_err();
 
-	println!("{}", hello.stuff);
+	println!("{:?}", report);
 }

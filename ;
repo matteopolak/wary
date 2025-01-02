@@ -5,8 +5,8 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule<Min, Max> = RangeRule<Min, Max>;
 
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
+#[derive(Debug, Clone, Copy, thiserror::Error)]
+pub enum RangeError {
 	#[error("Value is too small")]
 	TooSmall,
 	#[error("Value is too large")]
@@ -81,12 +81,12 @@ where
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
 		if let Some(min) = &self.min {
 			match item.compare(min) {
 				Some(Ordering::Greater) => {}
 				Some(Ordering::Equal) if !self.exclusive_min => {}
-				_ => return Err(Error::TooSmall.into()),
+				_ => return Err(RangeError::TooSmall.into()),
 			}
 		}
 
@@ -94,7 +94,7 @@ where
 			match item.compare(max) {
 				Some(Ordering::Less) => {}
 				Some(Ordering::Equal) if !self.exclusive_max => {}
-				_ => return Err(Error::TooLarge.into()),
+				_ => return Err(RangeError::TooLarge.into()),
 			}
 		}
 

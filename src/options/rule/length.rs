@@ -1,14 +1,14 @@
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule<T> = LengthRule<T>;
+pub type Rule<Mode> = LengthRule<Mode>;
 
 #[derive(Debug, thiserror::Error)]
-pub enum LengthError {
+pub enum Error {
 	#[error("Expected length of at least {min}, found {actual}")]
-	TooShort { min: usize, actual: usize },
+	TooShort { min: usize, actual: usize, exclusive: bool },
 	#[error("Expected length of at most {max}, found {actual}")]
-	TooLong { max: usize, actual: usize },
+	TooLong { max: usize, actual: usize, exclusive: bool },
 }
 
 pub struct LengthRule<Mode> {
@@ -103,12 +103,13 @@ impl<Mode> LengthRule<Mode> {
 		self
 	}
 
-	fn check(&self, len: usize) -> Result<(), Error> {
+	fn check(&self, len: usize) -> Result<()> {
 		if len < self.min {
 			return Err(
-				LengthError::TooShort {
+				Error::TooShort {
 					min: self.min,
 					actual: len,
+					exclusive: self.exclusive_min,
 				}
 				.into(),
 			);
@@ -116,9 +117,10 @@ impl<Mode> LengthRule<Mode> {
 
 		if len > self.max {
 			return Err(
-				LengthError::TooLong {
+				Error::TooLong {
 					max: self.max,
 					actual: len,
+					exclusive: self.exclusive_max,
 				}
 				.into(),
 			);
@@ -134,7 +136,7 @@ where
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		let len = item.length();
 
 		self.check(len)
@@ -147,7 +149,7 @@ where
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		let len = BytesLength(item).length();
 
 		self.check(len)
@@ -160,7 +162,7 @@ where
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		let len = CharsLength(item).length();
 
 		self.check(len)
@@ -173,7 +175,7 @@ where
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		let len = CodeUnitsLength(item).length();
 
 		self.check(len)
@@ -187,7 +189,7 @@ where
 {
 	type Context = ();
 
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		let len = GraphemesLength(item).length();
 
 		self.check(len)

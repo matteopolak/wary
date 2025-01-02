@@ -1,9 +1,12 @@
 #![allow(clippy::new_without_default)]
-//#![deny(clippy::print_stdout)]
+#![warn(clippy::print_stdout, clippy::print_stderr, clippy::panic)]
 
 pub mod error;
 pub mod options;
 pub mod util;
+use core::fmt;
+
+use error::Path;
 pub use error::{Error, Report};
 #[cfg(feature = "derive")]
 pub use wary_derive::*;
@@ -15,11 +18,12 @@ pub mod toolbox {
 		pub use core::marker::PhantomData;
 
 		pub use crate::{options::Unset, AsRef, AsSlice, Error, Report};
+		pub type Result<T> = core::result::Result<T, Error>;
 	}
 }
 
 pub trait Wary: Validate + Modify {
-	fn analyze(&mut self, ctx: &Self::Context) -> Result<(), Error> {
+	fn analyze(&mut self, ctx: &Self::Context) -> Result<(), Report> {
 		self.validate(ctx)?;
 		self.modify(ctx);
 		Ok(())
@@ -47,7 +51,18 @@ pub trait Rule<I: ?Sized> {
 pub trait Validate {
 	type Context;
 
-	fn validate(&self, ctx: &Self::Context) -> Result<(), Error>;
+	fn validate_into(&self, ctx: &Self::Context, parent: &Path, report: &mut Report);
+
+	fn validate(&self, ctx: &Self::Context) -> Result<(), Report> {
+		let mut report = Report::default();
+		self.validate_into(ctx, &Path::default(), &mut report);
+
+		if report.is_empty() {
+			Ok(())
+		} else {
+			Err(report)
+		}
+	}
 }
 
 impl<T> Validate for Option<T>
@@ -57,11 +72,9 @@ where
 	type Context = T::Context;
 
 	#[inline]
-	fn validate(&self, ctx: &Self::Context) -> Result<(), Error> {
+	fn validate_into(&self, ctx: &Self::Context, parent: &Path, report: &mut Report) {
 		if let Some(inner) = self {
-			inner.validate(ctx)
-		} else {
-			Ok(())
+			inner.validate_into(ctx, parent, report)
 		}
 	}
 }
@@ -73,8 +86,8 @@ where
 	type Context = T::Context;
 
 	#[inline]
-	fn validate(&self, ctx: &Self::Context) -> Result<(), Error> {
-		(*self).validate(ctx)
+	fn validate_into(&self, ctx: &Self::Context, parent: &Path, report: &mut Report) {
+		(*self).validate_into(ctx, parent, report)
 	}
 }
 
