@@ -100,7 +100,7 @@ impl<'l> IntoIterator for &'l Path {
 	}
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Elem {
 	Key(&'static str),
 	Index(usize),
@@ -142,46 +142,20 @@ impl Node {
 	}
 }
 
-#[cfg(all(test, not(test)))]
-mod tests {
+#[cfg(test)]
+mod test {
 	use super::*;
 
 	#[test]
-	fn path() {
-		let mut path = Path::new("a");
-		let mut path = path.append("b");
-		let mut path = path.append("c");
+	fn test_path_append() {
+		let path = Path::new("a").append(1).append("b").append("c");
+		let vec = path.collect();
 
-		let mut other = Path::new("1");
-		let mut other = other.append("2");
-		let other = other.append("3");
-
-		path.prefix(&other);
-
-		let mut new = Path::new("x");
-		let mut new = new.append("y");
-		let mut new = new.append("z");
-
-		new.prefix(&path);
-
-		let vec = new.into_iter().collect::<Vec<_>>();
-
-		assert_eq!(vec, vec!["z", "y", "x", "c", "b", "a", "3", "2", "1"]);
-	}
-
-	#[test]
-	fn dry_run() {
-		fn run1() -> Path {
-			let path = Path::new("age");
-			path
-		}
-
-		fn run2() -> Path {
-			let path = Path::new("person");
-			let mut age = run1();
-
-			age.prefix(&path);
-			age
-		}
+		assert_eq!(vec, vec![
+			Elem::Key("a"),
+			Elem::Index(1),
+			Elem::Key("b"),
+			Elem::Key("c"),
+		]);
 	}
 }

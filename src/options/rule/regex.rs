@@ -1,9 +1,12 @@
+#[doc(hidden)]
+pub use regex::Regex;
+
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
 pub type Rule<M> = RegexRule<M>;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, PartialEq)]
 pub enum Error {
 	#[error("value does not match pattern {pattern}")]
 	NoMatch { pattern: &'static str },
@@ -45,5 +48,26 @@ where
 	}
 }
 
-#[doc(hidden)]
-pub use regex::Regex;
+mod test {
+	use crate::toolbox::test::*;
+
+	#[derive(Wary)]
+	#[wary(crate = "crate")]
+	struct Text {
+		#[validate(regex(pat = "^a+"))]
+		a: &'static str,
+		#[validate(regex(pat = "^b+"))]
+		b: &'static str,
+	}
+
+	#[test]
+	fn test_regex_rule() {
+		let text = Text { a: "aaa", b: "bbb" };
+
+		assert!(text.validate(&()).is_ok());
+
+		let text = Text { a: "aaa", b: "ccc" };
+
+		assert!(text.validate(&()).is_err());
+	}
+}

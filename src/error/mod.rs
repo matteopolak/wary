@@ -6,7 +6,7 @@ pub use path::Path;
 
 use crate::options::rule;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, PartialEq)]
 #[non_exhaustive]
 pub enum Error {
 	#[error("value is not alphanumeric")]
@@ -38,8 +38,8 @@ pub enum Error {
 	#[error(transparent)]
 	Range(#[from] rule::range::Error),
 	#[cfg(feature = "semver")]
-	#[error(transparent)]
-	Semver(#[from] semver::Error),
+	#[error("value is not a valid semver version")]
+	Semver,
 	#[cfg(feature = "regex")]
 	#[error(transparent)]
 	Regex(#[from] rule::regex::Error),

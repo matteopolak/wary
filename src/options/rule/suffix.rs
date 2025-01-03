@@ -8,7 +8,7 @@ pub struct Slice;
 
 pub struct Not;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, PartialEq)]
 pub enum Error {
 	#[error("expected string to end with \"{0}\"")]
 	ShouldEndWith(&'static str),
@@ -26,7 +26,7 @@ pub struct SuffixRule<S, Mode, Kind> {
 	kind: PhantomData<Kind>,
 }
 
-impl<M> SuffixRule<Unset, M, Unset> {
+impl SuffixRule<Unset, Unset, Unset> {
 	#[must_use]
 	pub fn new() -> Self {
 		Self {
@@ -35,7 +35,9 @@ impl<M> SuffixRule<Unset, M, Unset> {
 			kind: PhantomData,
 		}
 	}
+}
 
+impl<M> SuffixRule<Unset, M, Unset> {
 	#[must_use]
 	pub fn str(self, suffix: &'static str) -> SuffixRule<&'static str, M, Str> {
 		SuffixRule {
@@ -141,5 +143,56 @@ where
 		} else {
 			Ok(())
 		}
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use std::borrow::Cow;
+
+	use crate::toolbox::test::*;
+
+	#[test]
+	fn test_prefix_str_rule() {
+		#[derive(Wary)]
+		#[wary(crate = "crate")]
+		struct Person<'name> {
+			#[validate(suffix(str = "hello"))]
+			name: Cow<'name, str>,
+		}
+
+		let person = Person {
+			name: Cow::Borrowed("world hello"),
+		};
+
+		assert!(person.validate(&()).is_ok());
+
+		let person = Person {
+			name: Cow::Borrowed("hello world"),
+		};
+
+		assert!(person.validate(&()).is_err());
+	}
+
+	#[test]
+	fn test_prefix_slice_rule() {
+		#[derive(Wary)]
+		#[wary(crate = "crate")]
+		struct Person {
+			#[validate(suffix(slice = [5, 6, 7, 8]))]
+			name: Vec<u8>,
+		}
+
+		let person = Person {
+			name: vec![1, 2, 3, 4, 5, 6, 7, 8],
+		};
+
+		assert!(person.validate(&()).is_ok());
+
+		let person = Person {
+			name: vec![5, 6, 7, 8, 9, 10],
+		};
+
+		assert!(person.validate(&()).is_err());
 	}
 }

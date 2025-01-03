@@ -1,30 +1,55 @@
-use crate::toolbox::rule::*;
+#[cfg(test)]
+mod test {
+	use crate::toolbox::test::*;
 
-#[doc(hidden)]
-pub type Rule<F> = InnerRule<F>;
-
-pub struct InnerRule<F> {
-	validate: F,
-}
-
-impl<F> InnerRule<F> {
-	pub fn new(validate: F) -> Self {
-		Self { validate }
+	#[derive(Wary)]
+	#[wary(crate = "crate")]
+	struct Item {
+		#[validate(ascii)]
+		name: &'static str,
 	}
-}
 
-impl<I: ?Sized, O, F> crate::Rule<I> for InnerRule<F>
-where
-	I: AsSlice<Item = O>,
-	F: Fn(&O) -> Result<()>,
-{
-	type Context = ();
-
-	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
-		for item in item.as_slice() {
-			(self.validate)(item)?;
+	#[test]
+	fn test_inner_rule() {
+		#[derive(Wary)]
+		#[wary(crate = "crate")]
+		struct Container {
+			#[validate(inner(dive))]
+			items: Vec<Item>,
 		}
 
-		Ok(())
+		let container = Container {
+			items: vec![Item { name: "Hello" }, Item { name: "world" }],
+		};
+
+		assert!(container.validate(&()).is_ok());
+
+		let container = Container {
+			items: vec![Item { name: "Hello" }, Item { name: "😃" }],
+		};
+
+		assert!(container.validate(&()).is_err());
+	}
+
+	#[test]
+	fn test_inner_rule_nested() {
+		#[derive(Wary)]
+		#[wary(crate = "crate")]
+		struct Container {
+			#[validate(inner(inner(dive)))]
+			items: Vec<Vec<Item>>,
+		}
+
+		let container = Container {
+			items: vec![vec![Item { name: "Hello" }, Item { name: "world" }]],
+		};
+
+		assert!(container.validate(&()).is_ok());
+
+		let container = Container {
+			items: vec![vec![Item { name: "Hello" }, Item { name: "😃" }]],
+		};
+
+		assert!(container.validate(&()).is_err());
 	}
 }

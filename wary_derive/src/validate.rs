@@ -1,5 +1,5 @@
-use darling::{ast, FromDeriveInput, FromField, FromMeta, FromVariant};
-use quote::{format_ident, quote, ToTokens};
+use darling::{FromDeriveInput, FromField, FromMeta, FromVariant, ast};
+use quote::{ToTokens, format_ident, quote};
 
 use crate::{
 	attr,
@@ -141,15 +141,13 @@ impl ValidateField {
 			let inner = inner.to_token_stream(crate_name, field, ty, false);
 
 			tokens.extend(quote! {
-				if let Err(e) = #crate_name::Rule::validate(
-					&#crate_name::options::rule::inner::Rule::new(|field| {
+				if let Err(e) = (|| {
+					for #field in #crate_name::AsSlice::as_slice(&#field) {
 						#inner
+					}
 
-						Ok::<(), #crate_name::Error>(())
-					}),
-					&(),
-					#field
-				) {
+					Ok::<(), #crate_name::Error>(())
+				})() {
 					__wary_report.push(__wary_parent.append(#field_path), e);
 				};
 			});

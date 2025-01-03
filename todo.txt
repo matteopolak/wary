@@ -1,1 +1,0 @@
-adding serde_json to encode all of the values in the slice types

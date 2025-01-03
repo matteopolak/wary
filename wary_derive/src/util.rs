@@ -1,8 +1,8 @@
 use std::{collections::HashSet, ops};
 
-use darling::{ast, FromMeta};
+use darling::{FromMeta, ast};
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote, ToTokens};
+use quote::{ToTokens, format_ident, quote};
 use syn::punctuated::Punctuated;
 
 use crate::{modify::ModifyFieldWrapper, validate::ValidateFieldWrapper};
@@ -323,27 +323,17 @@ where
 	/// Emits the destructuring of the variant to be used in a match arm within
 	/// e.g. `Self::Variant { #here }`.
 	pub fn destruct(&self) -> TokenStream {
-		let idents = self
-			.0
-			.iter()
-			.enumerate()
-			.map(|(i, f)| {
-				f.ident()
-					.map_or_else(|| (true, format_ident!("_{i}")), |f| (false, f.clone()))
-			})
-			.collect::<Vec<_>>();
+		let fields = self.idents();
 
-		idents
-			.iter()
-			.enumerate()
-			.map(|(i, (is_tuple, ident))| {
-				if *is_tuple {
-					quote! { #i: #ident }
-				} else {
-					ident.to_token_stream()
-				}
-			})
-			.collect()
+		let destruct = fields.into_iter().map(|field| {
+			let ident = field.ident();
+
+			quote! {
+				#ident: #field
+			}
+		});
+
+		quote!(#(#destruct),*)
 	}
 
 	pub fn idents(&self) -> Vec<Field> {
@@ -381,13 +371,20 @@ impl Field {
 			Field::Index(index) => index.to_token_stream(),
 		}
 	}
+
+	pub fn ident(&self) -> TokenStream {
+		match self {
+			Field::Ident(ident) => ident.to_token_stream(),
+			Field::Index(index) => syn::Index::from(*index).to_token_stream(),
+		}
+	}
 }
 
 impl ToTokens for Field {
 	fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-		match self {
-			Field::Ident(ident) => ident.to_tokens(tokens),
-			Field::Index(index) => format_ident!("_{}", index).to_tokens(tokens),
-		}
+		tokens.extend(match self {
+			Field::Ident(ident) => ident.to_token_stream(),
+			Field::Index(index) => format_ident!("_{}", syn::Index::from(*index)).to_token_stream(),
+		});
 	}
 }

@@ -28,3 +28,32 @@ where
 		}
 	}
 }
+
+#[cfg(test)]
+mod test {
+	use std::borrow::Cow;
+
+	use crate::toolbox::test::*;
+
+	#[derive(Wary)]
+	#[wary(crate = "crate")]
+	struct Person<'name> {
+		#[validate(ascii)]
+		name: Cow<'name, str>,
+	}
+
+	#[test]
+	fn test_ascii_rule() {
+		let person = Person {
+			name: Cow::Borrowed("Hello"),
+		};
+
+		assert!(person.validate(&()).is_ok());
+
+		let person = Person {
+			name: Cow::Borrowed("hello world 😃"),
+		};
+
+		assert!(person.validate(&()).is_err());
+	}
+}

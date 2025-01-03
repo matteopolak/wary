@@ -24,6 +24,11 @@ pub mod toolbox {
 		pub use crate::{options::Unset, AsRef, AsSlice, Error, Report};
 		pub type Result<T> = core::result::Result<T, Error>;
 	}
+
+	#[allow(unused_imports)]
+	pub(crate) mod test {
+		pub use crate::{toolbox::rule::*, Modifier, Modify, Rule, Validate, Wary};
+	}
 }
 
 pub trait Wary: Validate + Modify {

@@ -1,4 +1,4 @@
-use darling::{ast, FromDeriveInput};
+use darling::{FromDeriveInput, ast};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -151,6 +151,7 @@ impl EmitEnum<'_> {
 		let ident = &self.options.ident;
 
 		quote! {
+			#[allow(warnings)]
 			impl #imp #crate_name::Validate for #ident #ty #wher {
 				type Context = #context;
 
@@ -165,6 +166,7 @@ impl EmitEnum<'_> {
 				}
 			}
 
+			#[allow(warnings)]
 			impl #imp #crate_name::Modify for #ident #ty #wher {
 				fn modify(&mut self, ctx: &Self::Context) {
 					match self {
@@ -220,6 +222,7 @@ impl EmitStruct<'_> {
 		let ident = &self.options.ident;
 
 		quote! {
+			#[allow(warnings)]
 			impl #imp #crate_name::Validate for #ident #ty #wher {
 				type Context = #context;
 
@@ -234,6 +237,7 @@ impl EmitStruct<'_> {
 				}
 			}
 
+			#[allow(warnings)]
 			impl #imp #crate_name::Modify for #ident #ty #wher {
 				fn modify(&mut self, ctx: &Self::Context) {
 					let Self { #destruct } = self;

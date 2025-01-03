@@ -22,8 +22,34 @@ where
 	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		let version = item.as_ref();
 
-		version.parse::<semver::Version>()?;
+		// TODO: https://github.com/dtolnay/semver/issues/326
+		version
+			.parse::<semver::Version>()
+			.map_err(|_| crate::error::Error::Semver)?;
 
 		Ok(())
+	}
+}
+
+mod test {
+	use crate::toolbox::test::*;
+
+	#[derive(Wary)]
+	#[wary(crate = "crate")]
+	struct Version(#[validate(semver)] &'static str);
+
+	#[test]
+	fn test_semver_rule() {
+		let version = Version("1.2.3");
+
+		assert!(version.validate(&()).is_ok());
+
+		let version = Version("1.2.3-alpha");
+
+		assert!(version.validate(&()).is_ok());
+
+		let version = Version("blah");
+
+		assert!(version.validate(&()).is_err());
 	}
 }

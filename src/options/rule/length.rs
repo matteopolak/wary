@@ -3,7 +3,7 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule<Mode> = LengthRule<Mode>;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, PartialEq)]
 pub enum Error {
 	#[error("Expected length of at least {min}, found {actual}")]
 	TooShort {
@@ -314,8 +314,8 @@ where
 
 #[cfg(test)]
 mod test {
-	use super::*;
-	use crate::Rule;
+	use super::LengthRule;
+	use crate::toolbox::test::*;
 
 	#[test]
 	fn test_string_length() {

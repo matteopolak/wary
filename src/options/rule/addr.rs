@@ -5,7 +5,7 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule<Mode> = AddrRule<Mode>;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, PartialEq)]
 pub enum Error {
 	#[error("invalid_ip")]
 	InvalidIp,
@@ -95,5 +95,81 @@ where
 		} else {
 			Err(Error::InvalidIp.into())
 		}
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use crate::toolbox::test::*;
+
+	#[test]
+	fn test_addr_ipv4_rule() {
+		#[derive(Wary)]
+		#[wary(crate = "crate")]
+		struct Packet {
+			#[validate(addr(ipv4))]
+			src: String,
+			#[validate(addr(ipv4))]
+			dst: String,
+		}
+
+		let packet = Packet {
+			src: "192.168.1.1".into(),
+			dst: "1.1.1.1".into(),
+		};
+
+		assert!(packet.validate(&()).is_ok());
+
+		let packet = Packet {
+			src: "192.168.1.1.1".into(),
+			dst: "1.1.1.1".into(),
+		};
+
+		assert!(packet.validate(&()).is_err());
+	}
+
+	#[test]
+	fn test_addr_ipv6_rule() {
+		#[derive(Wary)]
+		#[wary(crate = "crate")]
+		struct Packet {
+			#[validate(addr(ipv6))]
+			src: String,
+			#[validate(addr(ipv6))]
+			dst: String,
+		}
+
+		let packet = Packet {
+			src: "2001:0db8:85a3:0000:0000:8a2e:0370:7334".into(),
+			dst: "2001:0db8:85a3:0000:0000:8a2e:0370:7334".into(),
+		};
+
+		assert!(packet.validate(&()).is_ok());
+
+		let packet = Packet {
+			src: "2001:0db8:85a3:0000:0000:8a2e:0370:7334".into(),
+			dst: "2001:0db8:85a3:0000:0000:8a2e:0370:7334:7334".into(),
+		};
+
+		assert!(packet.validate(&()).is_err());
+	}
+
+	#[test]
+	fn test_addr_ip_rule() {
+		#[derive(Wary)]
+		#[wary(crate = "crate")]
+		struct Packet {
+			#[validate(addr)]
+			src: String,
+			#[validate(addr)]
+			dst: String,
+		}
+
+		let packet = Packet {
+			src: "192.168.1.1".into(),
+			dst: "2001:0db8:85a3:0000:0000:8a2e:0370:7334".into(),
+		};
+
+		assert!(packet.validate(&()).is_ok());
 	}
 }

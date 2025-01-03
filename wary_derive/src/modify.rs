@@ -1,4 +1,4 @@
-use darling::{ast, FromDeriveInput, FromField, FromMeta, FromVariant};
+use darling::{FromDeriveInput, FromField, FromMeta, FromVariant, ast};
 use quote::{format_ident, quote};
 
 use crate::util::{Args, Field, Map};
@@ -132,7 +132,7 @@ impl ModifyField {
 
 			tokens.extend(quote! {
 				#crate_name::Modifier::modify(
-					&#crate_name::options::modifier::inner::Modifier::new(|field| {
+					&#crate_name::options::modifier::inner::Modifier::new(|#field| {
 						#inner
 					}),
 					&(),

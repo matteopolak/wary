@@ -5,7 +5,7 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule<C, Mode, Kind> = ContainsRule<C, Mode, Kind>;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, PartialEq)]
 pub enum Error {
 	#[error("expected string to contain \"{0}\"")]
 	ShouldContain(&'static str),
@@ -253,5 +253,56 @@ where
 		} else {
 			Ok(())
 		}
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use std::borrow::Cow;
+
+	use crate::toolbox::test::*;
+
+	#[test]
+	fn test_contains_str_rule() {
+		#[derive(Wary)]
+		#[wary(crate = "crate")]
+		struct Person<'name> {
+			#[validate(contains(str = "hello"))]
+			name: Cow<'name, str>,
+		}
+
+		let person = Person {
+			name: Cow::Borrowed("abchelloxyz"),
+		};
+
+		assert!(person.validate(&()).is_ok());
+
+		let person = Person {
+			name: Cow::Borrowed("abcworldxyz"),
+		};
+
+		assert!(person.validate(&()).is_err());
+	}
+
+	#[test]
+	fn test_contains_slice_rule() {
+		#[derive(Wary)]
+		#[wary(crate = "crate")]
+		struct Person {
+			#[validate(contains(slice = [5, 6, 7, 8]))]
+			name: Vec<u8>,
+		}
+
+		let person = Person {
+			name: vec![1, 2, 3, 4, 5, 6, 7, 8, 9],
+		};
+
+		assert!(person.validate(&()).is_ok());
+
+		let person = Person {
+			name: vec![1, 2, 3, 4, 5, 6, 7, 9],
+		};
+
+		assert!(person.validate(&()).is_err());
 	}
 }

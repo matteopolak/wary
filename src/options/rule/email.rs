@@ -31,17 +31,27 @@ where
 
 #[cfg(test)]
 mod test {
-	use super::*;
-	use crate::Rule;
+	use crate::toolbox::test::*;
+
+	#[derive(Wary)]
+	#[wary(crate = "crate")]
+	struct Person {
+		#[validate(email)]
+		email: String,
+	}
 
 	#[test]
-	fn test_email() {
-		let email = "hello@gmail.com";
+	fn test_email_rule() {
+		let person = Person {
+			email: "hello@email.com".into(),
+		};
 
-		let rule = EmailRule::new();
-		assert!(rule.validate(&(), email).is_ok());
+		assert!(person.validate(&()).is_ok());
 
-		let rule = EmailRule::new();
-		assert!(rule.validate(&(), "invalid").is_err());
+		let person = Person {
+			email: "hello".into(),
+		};
+
+		assert!(person.validate(&()).is_err());
 	}
 }

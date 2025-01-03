@@ -42,7 +42,7 @@ where
 		let string = item.as_ref();
 
 		for (idx, ch) in string.chars().enumerate() {
-			if !ch.is_uppercase() {
+			if !ch.is_uppercase() && !ch.is_whitespace() {
 				return Err(Error::Uppercase { position: idx });
 			}
 		}
@@ -62,7 +62,7 @@ where
 		let string = item.as_ref();
 
 		for (idx, ch) in string.chars().enumerate() {
-			if !ch.is_ascii_uppercase() {
+			if !ch.is_ascii_uppercase() && !ch.is_ascii_whitespace() {
 				return Err(Error::Uppercase { position: idx });
 			}
 		}
@@ -86,5 +86,44 @@ impl crate::Modifier<String> for Uppercase<Ascii> {
 	#[inline]
 	fn modify(&self, _ctx: &Self::Context, item: &mut String) {
 		item.make_ascii_uppercase();
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use super::Uppercase;
+	use crate::toolbox::test::*;
+
+	#[test]
+	fn test_uppercase_rule() {
+		let rule = Uppercase::new();
+		let input = "ὈΔΥΣΣΕΎΣ HELLO".to_string();
+
+		assert!(rule.validate(&(), &input).is_ok());
+
+		let rule = Uppercase::new().ascii();
+		let input = "ὈΔΥΣΣΕΎΣ".to_string();
+
+		assert!(rule.validate(&(), &input).is_err());
+
+		let rule = Uppercase::new().ascii();
+		let input = "HELLO WORLD".to_string();
+
+		assert!(rule.validate(&(), &input).is_ok());
+	}
+
+	#[test]
+	fn test_uppercase_modifier() {
+		let rule = Uppercase::new();
+		let mut input = "ὀδυσσεύς hello".to_string();
+
+		rule.modify(&(), &mut input);
+		assert_eq!(input, "ὈΔΥΣΣΕΎΣ HELLO");
+
+		let rule = Uppercase::new().ascii();
+		let mut input = "ὀδυσσεύς hello".to_string();
+
+		rule.modify(&(), &mut input);
+		assert_eq!(input, "ὀδυσσεύς HELLO");
 	}
 }

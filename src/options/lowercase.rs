@@ -42,7 +42,7 @@ where
 		let string = item.as_ref();
 
 		for (idx, ch) in string.chars().enumerate() {
-			if !ch.is_lowercase() {
+			if !ch.is_lowercase() && !ch.is_whitespace() {
 				return Err(Error::Lowercase { position: idx });
 			}
 		}
@@ -62,7 +62,7 @@ where
 		let string = item.as_ref();
 
 		for (idx, ch) in string.chars().enumerate() {
-			if !ch.is_ascii_lowercase() {
+			if !ch.is_ascii_lowercase() && !ch.is_ascii_whitespace() {
 				return Err(Error::Lowercase { position: idx });
 			}
 		}
@@ -86,5 +86,44 @@ impl crate::Modifier<String> for Lowercase<Ascii> {
 	#[inline]
 	fn modify(&self, _ctx: &Self::Context, item: &mut String) {
 		item.make_ascii_lowercase();
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use super::Lowercase;
+	use crate::toolbox::test::*;
+
+	#[test]
+	fn test_lowercase_rule() {
+		let rule = Lowercase::new();
+		let input = "ὈΔΥΣΣΕΎΣ hello".to_string();
+
+		assert!(rule.validate(&(), &input).is_err());
+
+		let rule = Lowercase::new().ascii();
+		let input = "ὈΔΥΣΣΕΎΣ".to_string();
+
+		assert!(rule.validate(&(), &input).is_err());
+
+		let rule = Lowercase::new().ascii();
+		let input = "hello world".to_string();
+
+		assert!(rule.validate(&(), &input).is_ok());
+	}
+
+	#[test]
+	fn test_lowercase_modifier() {
+		let rule = Lowercase::new();
+		let mut input = "ὈΔΥΣΣΕΎΣ HELLO".to_string();
+
+		rule.modify(&(), &mut input);
+		assert_eq!(input, "ὀδυσσεύς hello");
+
+		let rule = Lowercase::new().ascii();
+		let mut input = "ßeLLO".to_string();
+
+		rule.modify(&(), &mut input);
+		assert_eq!(input, "ßello");
 	}
 }

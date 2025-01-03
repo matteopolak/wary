@@ -5,7 +5,7 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule<Min, Max> = RangeRule<Min, Max>;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, PartialEq)]
 pub enum Error {
 	#[error("Value is too small")]
 	TooSmall,
@@ -188,7 +188,7 @@ mod test {
 	#[test]
 	fn test_float_range() {
 		for n in 1..=10 {
-			let n = n as f32;
+			let n = f64::from(n);
 
 			let rule = RangeRule::new().min(&1.0).max(&10.0);
 			assert!(rule.validate(&(), &n).is_ok());
