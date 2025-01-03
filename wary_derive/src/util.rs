@@ -156,7 +156,7 @@ impl ToTokens for Args {
 		for (path, value) in &self.0.inner {
 			tokens.extend(quote! {
 				.#path(#value)
-			})
+			});
 		}
 	}
 }
@@ -293,7 +293,7 @@ impl ToTokens for ArgsRef<'_> {
 		for (path, value) in self.0 {
 			tokens.extend(quote! {
 				.#path(&#value)
-			})
+			});
 		}
 	}
 }

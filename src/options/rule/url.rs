@@ -6,6 +6,7 @@ pub type Rule = UrlRule;
 pub struct UrlRule;
 
 impl UrlRule {
+	#[must_use]
 	pub fn new() -> Self {
 		Self
 	}

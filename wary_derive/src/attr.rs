@@ -16,23 +16,14 @@ pub fn extract_str(expr: &syn::Expr) -> Option<String> {
 }
 
 pub fn extract_option_path(ty: &syn::Type) -> Option<syn::Path> {
-	let path = match ungroup(ty) {
-		syn::Type::Path(ty) => &ty.path,
-		_ => {
-			return None;
-		}
+	let syn::Type::Path(syn::TypePath { path, .. }) = ungroup(ty) else {
+		return None;
 	};
-	let seg = match path.segments.last() {
-		Some(seg) => seg,
-		None => {
-			return None;
-		}
-	};
-	let args = match &seg.arguments {
-		syn::PathArguments::AngleBracketed(bracketed) => &bracketed.args,
-		_ => {
-			return None;
-		}
+	let seg = path.segments.last()?;
+	let syn::PathArguments::AngleBracketed(syn::AngleBracketedGenericArguments { args, .. }) =
+		&seg.arguments
+	else {
+		return None;
 	};
 
 	if seg.ident == "Option" && args.len() == 1 && matches!(args[0], syn::GenericArgument::Type(..)) {

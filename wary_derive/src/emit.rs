@@ -3,9 +3,9 @@ use proc_macro2::TokenStream;
 use quote::quote;
 
 use crate::{
-	modify::{Modify, ModifyFieldWrapper, ModifyVariant},
+	modify::{Modify, ModifyFieldWrapper, ModifyOptions, ModifyVariant},
 	util::Fields,
-	validate::{Validate, ValidateFieldWrapper, ValidateVariant},
+	validate::{Validate, ValidateFieldWrapper, ValidateOptions, ValidateVariant},
 };
 
 fn default_context() -> syn::Type {
@@ -42,12 +42,30 @@ impl Emit {
 				options: &self.options,
 				validate,
 				modify,
+				validate_top: ValidateOptions {
+					func: self.validate.func,
+					or: self.validate.or,
+					custom: self.validate.custom,
+				},
+				modify_top: ModifyOptions {
+					func: self.modify.func,
+					custom: self.modify.custom,
+				},
 			}
 			.into_token_stream(),
 			(ast::Data::Struct(validate), ast::Data::Struct(modify)) => EmitStruct {
 				options: &self.options,
 				validate,
 				modify,
+				validate_top: ValidateOptions {
+					func: self.validate.func,
+					or: self.validate.or,
+					custom: self.validate.custom,
+				},
+				modify_top: ModifyOptions {
+					func: self.modify.func,
+					custom: self.modify.custom,
+				},
 			}
 			.into_token_stream(),
 			_ => unimplemented!(),
@@ -73,10 +91,14 @@ struct EmitEnum<'o> {
 	options: &'o Options,
 	validate: Vec<ValidateVariant>,
 	modify: Vec<ModifyVariant>,
+	validate_top: ValidateOptions,
+	modify_top: ModifyOptions,
 }
 
 impl EmitEnum<'_> {
 	fn into_token_stream(self) -> TokenStream {
+		let ident = &self.options.ident;
+
 		let validate = self.validate.into_iter().map(|v| {
 			let destruct = Fields(&v.fields).destruct();
 			let ident = v.ident.clone();
@@ -95,6 +117,10 @@ impl EmitEnum<'_> {
 				}
 			}
 		});
+
+		let validate_top = self
+			.validate_top
+			.into_token_stream(&self.options.crate_name, &syn::parse_quote!(#ident));
 
 		let modify = self.modify.into_iter().map(|m| {
 			let destruct = Fields(&m.fields).destruct();
@@ -115,6 +141,10 @@ impl EmitEnum<'_> {
 			}
 		});
 
+		let modify_top = self
+			.modify_top
+			.into_token_stream(&self.options.crate_name, &syn::parse_quote!(#ident));
+
 		let (imp, ty, wher) = self.options.generics.split_for_impl();
 		let crate_name = &self.options.crate_name;
 		let context = &self.options.context;
@@ -130,6 +160,8 @@ impl EmitEnum<'_> {
 							#validate
 						)*
 					};
+
+					#validate_top
 				}
 			}
 
@@ -140,6 +172,8 @@ impl EmitEnum<'_> {
 							#modify
 						)*
 					};
+
+					#modify_top
 				}
 			}
 		}
@@ -150,12 +184,15 @@ struct EmitStruct<'o> {
 	options: &'o Options,
 	validate: ast::Fields<ValidateFieldWrapper>,
 	modify: ast::Fields<ModifyFieldWrapper>,
+	validate_top: ValidateOptions,
+	modify_top: ModifyOptions,
 }
 
 impl EmitStruct<'_> {
 	fn into_token_stream(self) -> TokenStream {
 		let destruct = Fields(&self.validate).destruct();
 		let idents = Fields(&self.validate).idents();
+		let ident = &self.options.ident;
 
 		let validate = self
 			.validate
@@ -163,11 +200,19 @@ impl EmitStruct<'_> {
 			.zip(&idents)
 			.map(|(v, i)| v.into_token_stream(&self.options.crate_name, i));
 
+		let validate_top = self
+			.validate_top
+			.into_token_stream(&self.options.crate_name, &syn::parse_quote!(#ident));
+
 		let modify = self
 			.modify
 			.into_iter()
 			.zip(&idents)
 			.map(|(m, i)| m.into_token_stream(&self.options.crate_name, i));
+
+		let modify_top = self
+			.modify_top
+			.into_token_stream(&self.options.crate_name, &syn::parse_quote!(#ident));
 
 		let (imp, ty, wher) = self.options.generics.split_for_impl();
 		let crate_name = &self.options.crate_name;
@@ -184,6 +229,8 @@ impl EmitStruct<'_> {
 					#(
 						#validate
 					)*
+
+					#validate_top
 				}
 			}
 
@@ -194,6 +241,8 @@ impl EmitStruct<'_> {
 					#(
 						#modify
 					)*
+
+					#modify_top
 				}
 			}
 		}

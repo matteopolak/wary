@@ -6,6 +6,7 @@ pub type Rule = AsciiRule;
 pub struct AsciiRule;
 
 impl AsciiRule {
+	#[must_use]
 	pub fn new() -> Self {
 		Self
 	}

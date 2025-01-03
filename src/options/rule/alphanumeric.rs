@@ -14,7 +14,7 @@ where
 	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		let email = item.as_ref();
 
-		if email.chars().all(|c| c.is_alphanumeric()) {
+		if email.chars().all(char::is_alphanumeric) {
 			Ok(())
 		} else {
 			Err(Error::Alphanumeric)

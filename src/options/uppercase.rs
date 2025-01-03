@@ -12,10 +12,9 @@ pub struct Uppercase<Mode> {
 pub struct Ascii;
 
 impl Uppercase<Unset> {
+	#[must_use]
 	pub fn new() -> Self {
-		Self {
-			mode: PhantomData,
-		}
+		Self { mode: PhantomData }
 	}
 
 	/// # Rule
@@ -26,10 +25,9 @@ impl Uppercase<Unset> {
 	///
 	/// Uses [`str::make_ascii_uppercase`] to convert in-place instead
 	/// of requiring a new allocation with [`str::to_uppercase`].
+	#[must_use]
 	pub fn ascii(self) -> Uppercase<Ascii> {
-		Uppercase {
-			mode: PhantomData,
-		}
+		Uppercase { mode: PhantomData }
 	}
 }
 
@@ -48,7 +46,7 @@ where
 				return Err(Error::Uppercase { position: idx });
 			}
 		}
-		
+
 		Ok(())
 	}
 }
@@ -68,7 +66,7 @@ where
 				return Err(Error::Uppercase { position: idx });
 			}
 		}
-		
+
 		Ok(())
 	}
 }

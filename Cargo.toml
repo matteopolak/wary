@@ -1,5 +1,5 @@
 [workspace]
-members = [".", "wary_derive"]
+members = [".", "wary_derive", "examples/*"]
 
 [package]
 name = "wary"
@@ -11,7 +11,7 @@ authors = ["Matthew Polak <contact@matteopolak.com>"]
 repository = "https://github.com/matteopolak/wary"
 
 [dependencies]
-thiserror = "1"
+thiserror = "2"
 
 email_address = { version = "0.2", default-features = false, optional = true }
 regex = { version = "1", optional = true }
@@ -20,6 +20,7 @@ wary_derive = { path = "wary_derive", version = "0.0.1", optional = true }
 semver = { version = "1", optional = true }
 unicode-segmentation = { version = "1", optional = true }
 serde = { version = "1", optional = true }
+serde_json = { version = "1", optional = true }
 
 [features]
 default = ["derive", "full", "serde"]
@@ -31,5 +32,5 @@ url = ["dep:url"]
 regex = ["dep:regex"]
 semver = ["dep:semver"]
 graphemes = ["dep:unicode-segmentation"]
-serde = ["dep:serde"]
+serde = ["dep:serde", "dep:serde_json"]
 

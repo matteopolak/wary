@@ -21,6 +21,12 @@ pub enum Error {
 	Uppercase { position: usize },
 	#[error(transparent)]
 	Contains(#[from] rule::contains::Error),
+	#[error(transparent)]
+	Prefix(#[from] rule::prefix::Error),
+	#[error(transparent)]
+	Suffix(#[from] rule::suffix::Error),
+	#[error(transparent)]
+	Equals(#[from] rule::equals::Error),
 	#[cfg(feature = "email")]
 	#[error(transparent)]
 	Email(#[from] email_address::Error),
@@ -37,8 +43,28 @@ pub enum Error {
 	#[cfg(feature = "regex")]
 	#[error(transparent)]
 	Regex(#[from] rule::regex::Error),
-	#[error("{0}")]
-	Custom(Cow<'static, str>),
+	#[error("{code}")]
+	Custom {
+		code: &'static str,
+		message: Option<Cow<'static, str>>,
+	},
+}
+
+impl Error {
+	#[must_use]
+	pub fn new(code: &'static str) -> Self {
+		Self::Custom {
+			code,
+			message: None,
+		}
+	}
+
+	pub fn with_message(code: &'static str, message: impl Into<Cow<'static, str>>) -> Self {
+		Self::Custom {
+			code,
+			message: Some(message.into()),
+		}
+	}
 }
 
 #[derive(Debug, Default)]
@@ -51,6 +77,7 @@ impl Report {
 		self.errors.push((path, error));
 	}
 
+	#[must_use]
 	pub fn is_empty(&self) -> bool {
 		self.errors.is_empty()
 	}
@@ -59,8 +86,9 @@ impl Report {
 #[cfg(feature = "serde")]
 impl serde::Serialize for Report {
 	fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
-	    where
-	        S: serde::Serializer {
+	where
+		S: serde::Serializer,
+	{
 		todo!()
 	}
 }

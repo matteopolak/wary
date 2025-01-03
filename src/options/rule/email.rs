@@ -8,6 +8,7 @@ pub type Rule = EmailRule;
 pub struct EmailRule;
 
 impl EmailRule {
+	#[must_use]
 	pub fn new() -> Self {
 		Self
 	}

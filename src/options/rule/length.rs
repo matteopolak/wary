@@ -6,9 +6,17 @@ pub type Rule<Mode> = LengthRule<Mode>;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
 	#[error("Expected length of at least {min}, found {actual}")]
-	TooShort { min: usize, actual: usize, exclusive: bool },
+	TooShort {
+		min: usize,
+		actual: usize,
+		exclusive: bool,
+	},
 	#[error("Expected length of at most {max}, found {actual}")]
-	TooLong { max: usize, actual: usize, exclusive: bool },
+	TooLong {
+		max: usize,
+		actual: usize,
+		exclusive: bool,
+	},
 }
 
 pub struct LengthRule<Mode> {
@@ -26,6 +34,7 @@ pub struct CodeUnits;
 pub struct Graphemes;
 
 impl LengthRule<Unset> {
+	#[must_use]
 	pub fn new() -> Self {
 		Self {
 			min: usize::MIN,
@@ -36,6 +45,7 @@ impl LengthRule<Unset> {
 		}
 	}
 
+	#[must_use]
 	pub fn chars(self) -> LengthRule<Chars> {
 		LengthRule {
 			min: self.min,
@@ -46,6 +56,7 @@ impl LengthRule<Unset> {
 		}
 	}
 
+	#[must_use]
 	pub fn bytes(self) -> LengthRule<Bytes> {
 		LengthRule {
 			min: self.min,
@@ -56,6 +67,7 @@ impl LengthRule<Unset> {
 		}
 	}
 
+	#[must_use]
 	pub fn code_units(self) -> LengthRule<CodeUnits> {
 		LengthRule {
 			min: self.min,
@@ -67,6 +79,7 @@ impl LengthRule<Unset> {
 	}
 
 	#[cfg(feature = "graphemes")]
+	#[must_use]
 	pub fn graphemes(self) -> LengthRule<Graphemes> {
 		LengthRule {
 			min: self.min,
@@ -79,24 +92,28 @@ impl LengthRule<Unset> {
 }
 
 impl<Mode> LengthRule<Mode> {
+	#[must_use]
 	pub fn min(mut self, min: usize) -> Self {
 		self.min = min;
 		self.exclusive_min = false;
 		self
 	}
 
+	#[must_use]
 	pub fn max(mut self, max: usize) -> Self {
 		self.max = max;
 		self.exclusive_max = false;
 		self
 	}
 
+	#[must_use]
 	pub fn exclusive_min(mut self, min: usize) -> Self {
 		self.min = min;
 		self.exclusive_min = true;
 		self
 	}
 
+	#[must_use]
 	pub fn exclusive_max(mut self, max: usize) -> Self {
 		self.max = max;
 		self.exclusive_max = true;

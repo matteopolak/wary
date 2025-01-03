@@ -25,6 +25,7 @@ pub struct RangeRule<Min, Max> {
 }
 
 impl RangeRule<Unset, Unset> {
+	#[must_use]
 	pub fn new() -> Self {
 		RangeRule {
 			min: None,

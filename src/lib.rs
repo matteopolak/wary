@@ -1,10 +1,14 @@
-#![allow(clippy::new_without_default)]
-#![warn(clippy::print_stdout, clippy::print_stderr, clippy::panic)]
+#![warn(
+	clippy::pedantic,
+	clippy::print_stdout,
+	clippy::print_stderr,
+	clippy::panic
+)]
+#![allow(clippy::new_without_default, clippy::wildcard_imports)]
 
 pub mod error;
 pub mod options;
 pub mod util;
-use core::fmt;
 
 use error::Path;
 pub use error::{Error, Report};
@@ -23,6 +27,12 @@ pub mod toolbox {
 }
 
 pub trait Wary: Validate + Modify {
+	/// Validates with [`Validate::validate`], then (if successful) modifies with
+	/// [`Modify::modify`].
+	///
+	/// # Errors
+	///
+	/// Forwards any errors from [`Validate::validate`].
 	fn analyze(&mut self, ctx: &Self::Context) -> Result<(), Report> {
 		self.validate(ctx)?;
 		self.modify(ctx);
@@ -45,6 +55,11 @@ pub trait Modify: Validate {
 pub trait Rule<I: ?Sized> {
 	type Context;
 
+	/// Validates the item.
+	///
+	/// # Errors
+	///
+	/// Returns an error if the item does not pass validation.
 	fn validate(&self, ctx: &Self::Context, item: &I) -> Result<(), Error>;
 }
 
@@ -53,6 +68,11 @@ pub trait Validate {
 
 	fn validate_into(&self, ctx: &Self::Context, parent: &Path, report: &mut Report);
 
+	/// Validates itself.
+	///
+	/// # Errors
+	///
+	/// Returns all errors found during validation.
 	fn validate(&self, ctx: &Self::Context) -> Result<(), Report> {
 		let mut report = Report::default();
 		self.validate_into(ctx, &Path::default(), &mut report);
@@ -74,7 +94,7 @@ where
 	#[inline]
 	fn validate_into(&self, ctx: &Self::Context, parent: &Path, report: &mut Report) {
 		if let Some(inner) = self {
-			inner.validate_into(ctx, parent, report)
+			inner.validate_into(ctx, parent, report);
 		}
 	}
 }
@@ -87,7 +107,7 @@ where
 
 	#[inline]
 	fn validate_into(&self, ctx: &Self::Context, parent: &Path, report: &mut Report) {
-		(*self).validate_into(ctx, parent, report)
+		(*self).validate_into(ctx, parent, report);
 	}
 }
 
@@ -132,15 +152,6 @@ where
 	}
 }
 
-impl AsSlice for &str {
-	type Item = u8;
-
-	#[inline]
-	fn as_slice(&self) -> &[Self::Item] {
-		self.as_bytes()
-	}
-}
-
 impl<T> AsSlice for Vec<T> {
 	type Item = T;
 
@@ -165,6 +176,15 @@ impl<const N: usize, T> AsSlice for [T; N] {
 	#[inline]
 	fn as_slice(&self) -> &[Self::Item] {
 		self
+	}
+}
+
+impl AsSlice for &str {
+	type Item = u8;
+
+	#[inline]
+	fn as_slice(&self) -> &[Self::Item] {
+		self.as_bytes()
 	}
 }
 

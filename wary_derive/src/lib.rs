@@ -1,4 +1,5 @@
-#![deny(clippy::print_stdout)]
+#![warn(clippy::pedantic, clippy::print_stdout)]
+#![allow(clippy::too_many_lines)]
 
 use darling::FromDeriveInput;
 use emit::Emit;

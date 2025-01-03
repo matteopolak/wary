@@ -1,5 +1,7 @@
+#![allow(clippy::should_implement_trait)]
+
 pub mod rule {
-	pub use super::{custom, func, uppercase, lowercase};
+	pub use super::{custom, func, lowercase, uppercase};
 
 	pub mod ascii;
 	/// Validates that a string-like value is an email address.
@@ -29,9 +31,9 @@ pub mod rule {
 	pub mod equals;
 	pub mod inner;
 	pub use equals as eq;
+	pub mod prefix;
 	#[cfg(feature = "regex")]
 	pub mod regex;
-	pub mod prefix;
 	pub mod semver;
 	#[cfg(feature = "semver")]
 	pub mod suffix;
@@ -40,14 +42,14 @@ pub mod rule {
 }
 
 pub mod modifier {
-	pub use super::{custom, func, uppercase, lowercase};
+	pub use super::{custom, func, lowercase, uppercase};
 
 	pub mod inner;
 }
 
 // both rule and modifier
-pub mod uppercase;
 pub mod lowercase;
+pub mod uppercase;
 
 // for auto-complete
 pub mod func {}

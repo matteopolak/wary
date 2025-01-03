@@ -6,6 +6,7 @@ pub type Rule = SemverRule;
 pub struct SemverRule;
 
 impl SemverRule {
+	#[must_use]
 	pub fn new() -> Self {
 		Self
 	}

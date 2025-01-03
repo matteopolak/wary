@@ -14,10 +14,12 @@ pub struct RegexRule<M> {
 }
 
 impl RegexRule<Unset> {
+	#[must_use]
 	pub fn new() -> Self {
 		Self { matcher: Unset }
 	}
 
+	#[must_use]
 	pub fn pat(self, regex: &'static Regex) -> RegexRule<&'static Regex> {
 		RegexRule { matcher: regex }
 	}

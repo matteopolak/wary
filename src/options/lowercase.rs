@@ -12,6 +12,7 @@ pub struct Lowercase<Mode> {
 pub struct Ascii;
 
 impl Lowercase<Unset> {
+	#[must_use]
 	pub fn new() -> Self {
 		Self { mode: PhantomData }
 	}
@@ -24,6 +25,7 @@ impl Lowercase<Unset> {
 	///
 	/// Uses [`str::make_ascii_lowercase`] to convert in-place instead
 	/// of requiring a new allocation with [`str::to_lowercase`].
+	#[must_use]
 	pub fn ascii(self) -> Lowercase<Ascii> {
 		Lowercase { mode: PhantomData }
 	}
@@ -44,7 +46,7 @@ where
 				return Err(Error::Lowercase { position: idx });
 			}
 		}
-		
+
 		Ok(())
 	}
 }

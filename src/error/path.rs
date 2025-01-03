@@ -9,7 +9,7 @@ pub enum Path {
 	NonEmpty {
 		head: Arc<Node>,
 		tail: Arc<Node>,
-	}
+	},
 }
 
 impl fmt::Debug for Path {
@@ -17,11 +17,11 @@ impl fmt::Debug for Path {
 		let mut elems = self.clone().collect().into_iter();
 
 		if let Some(elem) = elems.next() {
-			write!(f, "{}", elem)?;
+			write!(f, "{elem}")?;
 		}
 
 		for elem in elems {
-			write!(f, ".{}", elem)?;
+			write!(f, ".{elem}")?;
 		}
 
 		Ok(())
@@ -38,6 +38,7 @@ impl Path {
 		}
 	}
 
+	#[must_use]
 	pub fn append<E: Into<Elem>>(&self, elem: E) -> Self {
 		let Self::NonEmpty { tail, head } = self else {
 			return Self::new(elem);
@@ -54,11 +55,17 @@ impl Path {
 
 	// TODO: use smallvec or something if this is too slow
 	/// Collects the path (and reverses it so it's "in order").
+	#[must_use]
 	pub fn collect(self) -> Vec<Elem> {
 		let mut elems = self.into_iter().collect::<Vec<_>>();
 		// the iterator iterates in reverse
 		elems.reverse();
 		elems
+	}
+
+	#[must_use]
+	pub fn iter(&self) -> Iter<'_> {
+		self.into_iter()
 	}
 }
 
@@ -102,8 +109,8 @@ pub enum Elem {
 impl fmt::Display for Elem {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		match self {
-			Self::Key(key) => write!(f, "{}", key),
-			Self::Index(index) => write!(f, "{}", index),
+			Self::Key(key) => write!(f, "{key}"),
+			Self::Index(index) => write!(f, "{index}"),
 		}
 	}
 }

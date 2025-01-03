@@ -1,5 +1,5 @@
 use darling::{ast, FromDeriveInput, FromField, FromMeta, FromVariant};
-use quote::{quote, ToTokens};
+use quote::{format_ident, quote, ToTokens};
 
 use crate::{
 	attr,
@@ -10,6 +10,21 @@ use crate::{
 #[darling(attributes(validate))]
 pub struct Validate {
 	pub data: ast::Data<ValidateVariant, ValidateFieldWrapper>,
+
+	#[darling(multiple)]
+	pub func: Vec<syn::Expr>,
+
+	#[darling(default)]
+	pub or: Tuple<ValidateField>,
+
+	#[darling(default)]
+	pub custom: Map<syn::Path, Option<Args>>,
+}
+
+pub struct ValidateOptions {
+	pub func: Vec<syn::Expr>,
+	pub or: Tuple<ValidateField>,
+	pub custom: Map<syn::Path, Option<Args>>,
 }
 
 #[derive(Debug, FromVariant)]
@@ -19,7 +34,7 @@ pub struct ValidateVariant {
 }
 
 #[derive(Debug, FromMeta)]
-struct ValidateField {
+pub struct ValidateField {
 	#[darling(multiple)]
 	func: Vec<syn::Expr>,
 
@@ -220,6 +235,30 @@ impl ValidateField {
 		}
 
 		tokens
+	}
+}
+
+impl ValidateOptions {
+	pub fn into_token_stream(
+		self,
+		crate_name: &syn::Path,
+		ty: &syn::Type,
+	) -> proc_macro2::TokenStream {
+		ValidateField {
+			func: self.func,
+			custom: self.custom,
+			or: self.or,
+			and: Tuple::default(),
+			dive: darling::util::Flag::default(),
+			inner: None,
+			builtin: Map::default(),
+		}
+		.to_token_stream(
+			crate_name,
+			&Field::new_ident(format_ident!("self")),
+			ty,
+			true,
+		)
 	}
 }
 

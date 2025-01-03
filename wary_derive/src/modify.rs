@@ -1,5 +1,5 @@
 use darling::{ast, FromDeriveInput, FromField, FromMeta, FromVariant};
-use quote::quote;
+use quote::{format_ident, quote};
 
 use crate::util::{Args, Field, Map};
 
@@ -7,6 +7,17 @@ use crate::util::{Args, Field, Map};
 #[darling(attributes(modify))]
 pub struct Modify {
 	pub data: ast::Data<ModifyVariant, ModifyFieldWrapper>,
+
+	#[darling(multiple)]
+	pub func: Vec<syn::Expr>,
+
+	#[darling(default)]
+	pub custom: Map<syn::Path, Option<Args>>,
+}
+
+pub struct ModifyOptions {
+	pub func: Vec<syn::Expr>,
+	pub custom: Map<syn::Path, Option<Args>>,
 }
 
 #[derive(Debug, FromVariant)]
@@ -73,6 +84,27 @@ impl ModifyFieldWrapper {
 	}
 }
 
+impl ModifyOptions {
+	pub fn into_token_stream(
+		self,
+		crate_name: &syn::Path,
+		ty: &syn::Type,
+	) -> proc_macro2::TokenStream {
+		ModifyField {
+			func: self.func,
+			custom: self.custom,
+			inner: None,
+			builtin: Map::default(),
+		}
+		.to_token_stream(
+			crate_name,
+			&Field::new_ident(format_ident!("self")),
+			ty,
+			true,
+		)
+	}
+}
+
 impl ModifyField {
 	#[allow(clippy::wrong_self_convention)]
 	fn to_token_stream(
@@ -112,7 +144,7 @@ impl ModifyField {
 		for func in &self.func {
 			tokens.extend(quote! {
 				{
-					(#func)(ctx, #field);
+					let _: () = (#func)(ctx, #field);
 				}
 			});
 		}

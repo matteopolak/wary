@@ -1,19 +1,19 @@
 use crate::AsSliceMut;
 
 #[doc(hidden)]
-pub type Modifier<F> = InnerRule<F>;
+pub type Modifier<F> = InnerModifier<F>;
 
-pub struct InnerRule<F> {
+pub struct InnerModifier<F> {
 	modify: F,
 }
 
-impl<F> InnerRule<F> {
+impl<F> InnerModifier<F> {
 	pub fn new(modify: F) -> Self {
 		Self { modify }
 	}
 }
 
-impl<I: ?Sized, O, F> crate::Modifier<I> for InnerRule<F>
+impl<I: ?Sized, O, F> crate::Modifier<I> for InnerModifier<F>
 where
 	I: AsSliceMut<Item = O>,
 	F: Fn(&mut O),
