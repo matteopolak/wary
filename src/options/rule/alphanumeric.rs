@@ -3,10 +3,11 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule = AlphanumericRule;
 
+#[must_use]
 pub struct AlphanumericRule;
 
 impl AlphanumericRule {
-	#[must_use]
+	#[inline]
 	pub fn new() -> Self {
 		Self
 	}

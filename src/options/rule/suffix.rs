@@ -20,6 +20,7 @@ pub enum Error {
 	ShouldNotEndWithSlice,
 }
 
+#[must_use]
 pub struct SuffixRule<S, Mode, Kind> {
 	suffix: S,
 	mode: PhantomData<Mode>,
@@ -27,8 +28,8 @@ pub struct SuffixRule<S, Mode, Kind> {
 }
 
 impl SuffixRule<Unset, Unset, Unset> {
-	#[must_use]
-	pub fn new() -> Self {
+	#[inline]
+	pub const fn new() -> Self {
 		Self {
 			suffix: Unset,
 			mode: PhantomData,
@@ -38,7 +39,7 @@ impl SuffixRule<Unset, Unset, Unset> {
 }
 
 impl<M> SuffixRule<Unset, M, Unset> {
-	#[must_use]
+	#[inline]
 	pub fn str(self, suffix: &'static str) -> SuffixRule<&'static str, M, Str> {
 		SuffixRule {
 			suffix,
@@ -47,6 +48,7 @@ impl<M> SuffixRule<Unset, M, Unset> {
 		}
 	}
 
+	#[inline]
 	pub fn slice<S>(self, suffix: S) -> SuffixRule<S, M, Slice> {
 		SuffixRule {
 			suffix,
@@ -57,6 +59,7 @@ impl<M> SuffixRule<Unset, M, Unset> {
 }
 
 impl<S, K> SuffixRule<S, Unset, K> {
+	#[inline]
 	pub fn not(self) -> SuffixRule<S, Not, K> {
 		SuffixRule {
 			suffix: self.suffix,

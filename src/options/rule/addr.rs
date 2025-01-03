@@ -19,29 +19,30 @@ pub struct Ip;
 pub struct IpV4;
 pub struct IpV6;
 
+#[must_use]
 pub struct AddrRule<Mode> {
 	mode: PhantomData<Mode>,
 }
 
 impl AddrRule<Ip> {
-	#[must_use]
+	#[inline]
 	pub fn new() -> AddrRule<Ip> {
 		AddrRule { mode: PhantomData }
 	}
 }
 
 impl<M> AddrRule<M> {
-	#[must_use]
+	#[inline]
 	pub fn ipv4(self) -> AddrRule<IpV4> {
 		AddrRule { mode: PhantomData }
 	}
 
-	#[must_use]
+	#[inline]
 	pub fn ipv6(self) -> AddrRule<IpV6> {
 		AddrRule { mode: PhantomData }
 	}
 
-	#[must_use]
+	#[inline]
 	pub fn ip(self) -> AddrRule<Ip> {
 		AddrRule { mode: PhantomData }
 	}

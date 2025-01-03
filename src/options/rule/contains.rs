@@ -25,6 +25,7 @@ pub struct AnyOrderNot;
 pub struct Str;
 pub struct Slice;
 
+#[must_use]
 pub struct ContainsRule<C, Mode, Kind> {
 	contains: C,
 	mode: PhantomData<Mode>,
@@ -32,7 +33,7 @@ pub struct ContainsRule<C, Mode, Kind> {
 }
 
 impl ContainsRule<Unset, InOrder, Unset> {
-	#[must_use]
+	#[inline]
 	pub fn new() -> ContainsRule<Unset, InOrder, Unset> {
 		ContainsRule {
 			contains: Unset,
@@ -43,7 +44,7 @@ impl ContainsRule<Unset, InOrder, Unset> {
 }
 
 impl<M> ContainsRule<Unset, M, Unset> {
-	#[must_use]
+	#[inline]
 	pub fn str(self, contains: &'static str) -> ContainsRule<&'static str, M, Str> {
 		ContainsRule {
 			contains,
@@ -52,6 +53,7 @@ impl<M> ContainsRule<Unset, M, Unset> {
 		}
 	}
 
+	#[inline]
 	pub fn slice<C>(self, contains: C) -> ContainsRule<C, M, Slice> {
 		ContainsRule {
 			contains,
@@ -64,6 +66,7 @@ impl<M> ContainsRule<Unset, M, Unset> {
 impl<C, M, K> ContainsRule<C, M, K> {
 	/// Validates that all of the items in the `contains` list are in the `inner`
 	/// list in the same order.
+	#[inline]
 	pub fn in_order(self) -> ContainsRule<C, InOrder, K> {
 		ContainsRule {
 			contains: self.contains,
@@ -77,6 +80,7 @@ impl<C, M, K> ContainsRule<C, M, K> {
 	/// contain only the items in the `contains` list.
 	///
 	/// This can only be used with slices.
+	#[inline]
 	pub fn any_order(self) -> ContainsRule<C, AnyOrder, K> {
 		ContainsRule {
 			contains: self.contains,
@@ -89,6 +93,7 @@ impl<C, M, K> ContainsRule<C, M, K> {
 impl<C, K> ContainsRule<C, InOrder, K> {
 	/// Validates that all of the items in the `contains` list are not in the
 	/// `inner` list in the same order.
+	#[inline]
 	pub fn not(self) -> ContainsRule<C, InOrderNot, K> {
 		ContainsRule {
 			contains: self.contains,
@@ -102,6 +107,7 @@ impl<C, K> ContainsRule<C, AnyOrder, K> {
 	/// Validates that all of the items in the `contains` list are not in the
 	/// `inner` list in any order. Note that this does not enforce the `inner`
 	/// list to contain only the items in the `contains` list.
+	#[inline]
 	pub fn not(self) -> ContainsRule<C, AnyOrderNot, K> {
 		ContainsRule {
 			contains: self.contains,

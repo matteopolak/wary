@@ -5,10 +5,11 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule = EmailRule;
 
+#[must_use]
 pub struct EmailRule;
 
 impl EmailRule {
-	#[must_use]
+	#[inline]
 	pub fn new() -> Self {
 		Self
 	}

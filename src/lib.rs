@@ -5,6 +5,7 @@
 	clippy::panic
 )]
 #![allow(clippy::new_without_default, clippy::wildcard_imports)]
+#![cfg_attr(test, allow(non_upper_case_globals))]
 
 pub mod error;
 pub mod options;
@@ -157,6 +158,15 @@ where
 	}
 }
 
+impl<T> AsSlice for Option<T> {
+	type Item = T;
+
+	#[inline]
+	fn as_slice(&self) -> &[Self::Item] {
+		Option::as_slice(self)
+	}
+}
+
 impl<T> AsSlice for Vec<T> {
 	type Item = T;
 
@@ -211,37 +221,44 @@ impl AsSlice for String {
 	}
 }
 
-pub trait AsSliceMut: AsSlice {
-	fn as_slice_mut(&mut self) -> &mut [Self::Item];
+pub trait AsMutSlice: AsSlice {
+	fn as_mut_slice(&mut self) -> &mut [Self::Item];
 }
 
-impl<T> AsSliceMut for &mut T
+impl<T> AsMutSlice for &mut T
 where
-	T: AsSliceMut,
+	T: AsMutSlice,
 {
 	#[inline]
-	fn as_slice_mut(&mut self) -> &mut [Self::Item] {
-		(**self).as_slice_mut()
+	fn as_mut_slice(&mut self) -> &mut [Self::Item] {
+		(**self).as_mut_slice()
 	}
 }
 
-impl<T> AsSliceMut for Vec<T> {
+impl<T> AsMutSlice for Option<T> {
 	#[inline]
-	fn as_slice_mut(&mut self) -> &mut [Self::Item] {
+	fn as_mut_slice(&mut self) -> &mut [Self::Item] {
+		Option::as_mut_slice(self)
+	}
+}
+
+impl<T> AsMutSlice for Vec<T> {
+	#[inline]
+	fn as_mut_slice(&mut self) -> &mut [Self::Item] {
 		self
 	}
 }
 
-impl<T> AsSliceMut for [T] {
+impl<T> AsMutSlice for [T] {
 	#[inline]
-	fn as_slice_mut(&mut self) -> &mut [Self::Item] {
+	fn as_mut_slice(&mut self) -> &mut [Self::Item] {
 		self
 	}
 }
 
-impl<const N: usize, T> AsSliceMut for [T; N] {
+impl<const N: usize, T> AsMutSlice for [T; N] {
 	#[inline]
-	fn as_slice_mut(&mut self) -> &mut [Self::Item] {
+	fn as_mut_slice(&mut self) -> &mut [Self::Item] {
 		self
 	}
 }

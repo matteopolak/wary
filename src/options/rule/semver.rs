@@ -3,11 +3,12 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule = SemverRule;
 
+#[must_use]
 pub struct SemverRule;
 
 impl SemverRule {
-	#[must_use]
-	pub fn new() -> Self {
+	#[inline]
+	pub const fn new() -> Self {
 		Self
 	}
 }

@@ -1,4 +1,4 @@
-use crate::AsSliceMut;
+use crate::AsMutSlice;
 
 #[doc(hidden)]
 pub type Modifier<F> = InnerModifier<F>;
@@ -15,13 +15,13 @@ impl<F> InnerModifier<F> {
 
 impl<I: ?Sized, O, F> crate::Modifier<I> for InnerModifier<F>
 where
-	I: AsSliceMut<Item = O>,
+	I: AsMutSlice<Item = O>,
 	F: Fn(&mut O),
 {
 	type Context = ();
 
 	fn modify(&self, _ctx: &Self::Context, item: &mut I) {
-		for item in item.as_slice_mut() {
+		for item in item.as_mut_slice() {
 			(self.modify)(item);
 		}
 	}

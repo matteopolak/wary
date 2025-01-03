@@ -1,5 +1,7 @@
 #![allow(clippy::should_implement_trait)]
 
+use core::fmt;
+
 pub mod rule {
 	pub use super::{custom, func, lowercase, uppercase};
 
@@ -34,6 +36,7 @@ pub mod rule {
 	pub mod prefix;
 	#[cfg(feature = "regex")]
 	pub mod regex;
+	pub mod required;
 	pub mod semver;
 	#[cfg(feature = "semver")]
 	pub mod suffix;
@@ -55,5 +58,15 @@ pub mod uppercase;
 pub mod func {}
 pub mod custom {}
 
-#[doc(hidden)]
 pub struct Unset;
+
+pub(crate) struct DebugDisplay<T>(pub T);
+
+impl<T> fmt::Display for DebugDisplay<T>
+where
+	T: fmt::Debug,
+{
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		self.0.fmt(f)
+	}
+}

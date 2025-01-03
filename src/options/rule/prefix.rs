@@ -20,6 +20,7 @@ pub enum Error {
 	ShouldNotStartWithSlice,
 }
 
+#[must_use]
 pub struct PrefixRule<P, Mode, Kind> {
 	prefix: P,
 	mode: PhantomData<Mode>,
@@ -27,7 +28,7 @@ pub struct PrefixRule<P, Mode, Kind> {
 }
 
 impl PrefixRule<Unset, Unset, Unset> {
-	#[must_use]
+	#[inline]
 	pub fn new() -> Self {
 		Self {
 			prefix: Unset,
@@ -38,7 +39,7 @@ impl PrefixRule<Unset, Unset, Unset> {
 }
 
 impl<M> PrefixRule<Unset, M, Unset> {
-	#[must_use]
+	#[inline]
 	pub fn str(self, prefix: &'static str) -> PrefixRule<&'static str, M, Str> {
 		PrefixRule {
 			prefix,
@@ -47,6 +48,7 @@ impl<M> PrefixRule<Unset, M, Unset> {
 		}
 	}
 
+	#[inline]
 	pub fn slice<P>(self, prefix: P) -> PrefixRule<P, M, Slice> {
 		PrefixRule {
 			prefix,
@@ -57,6 +59,7 @@ impl<M> PrefixRule<Unset, M, Unset> {
 }
 
 impl<P, K> PrefixRule<P, Unset, K> {
+	#[inline]
 	pub fn not(self) -> PrefixRule<P, Not, K> {
 		PrefixRule {
 			prefix: self.prefix,

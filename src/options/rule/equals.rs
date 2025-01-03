@@ -1,37 +1,28 @@
 use core::fmt;
 
-use crate::toolbox::rule::*;
+use crate::{options::DebugDisplay, toolbox::rule::*};
 
 #[doc(hidden)]
 pub type Rule<O, Mode> = EqualsRule<O, Mode>;
 
 pub struct Not;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, PartialEq)]
 pub enum Error {
-	#[error("expected to equal {0:?}")]
-	ShouldEqual(Box<dyn fmt::Debug>),
-	#[error("expected to not equal {0:?}")]
-	ShouldNotEqual(Box<dyn fmt::Debug>),
+	#[error("expected to equal {0}")]
+	ShouldEqual(String),
+	#[error("expected to not equal {0}")]
+	ShouldNotEqual(String),
 }
 
-impl PartialEq for Error {
-	fn eq(&self, other: &Self) -> bool {
-		match (self, other) {
-			(Error::ShouldEqual(a), Error::ShouldEqual(b))
-			| (Error::ShouldNotEqual(a), Error::ShouldNotEqual(b)) => format!("{a:?}") == format!("{b:?}"),
-			_ => false,
-		}
-	}
-}
-
+#[must_use]
 pub struct EqualsRule<O, Mode> {
 	other: O,
 	mode: PhantomData<Mode>,
 }
 
 impl EqualsRule<Unset, Unset> {
-	#[must_use]
+	#[inline]
 	pub fn new() -> EqualsRule<Unset, Unset> {
 		EqualsRule {
 			other: Unset,
@@ -41,6 +32,7 @@ impl EqualsRule<Unset, Unset> {
 }
 
 impl<M> EqualsRule<Unset, M> {
+	#[inline]
 	pub fn other<O>(self, other: O) -> EqualsRule<O, M>
 	where
 		O: fmt::Debug + Copy + 'static,
@@ -53,6 +45,7 @@ impl<M> EqualsRule<Unset, M> {
 }
 
 impl<O> EqualsRule<O, Unset> {
+	#[inline]
 	pub fn not(self) -> EqualsRule<O, Not> {
 		EqualsRule {
 			other: self.other,
@@ -63,7 +56,7 @@ impl<O> EqualsRule<O, Unset> {
 
 impl<I: ?Sized, O> crate::Rule<I> for EqualsRule<O, Unset>
 where
-	O: fmt::Debug + Copy + 'static,
+	O: fmt::Debug,
 	for<'i> &'i I: PartialEq<O>,
 {
 	type Context = ();
@@ -73,7 +66,7 @@ where
 		if item == self.other {
 			Ok(())
 		} else {
-			Err(Error::ShouldEqual(Box::new(self.other)).into())
+			Err(Error::ShouldEqual(DebugDisplay(&self.other).to_string()).into())
 		}
 	}
 }
@@ -88,7 +81,7 @@ where
 	#[inline]
 	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		if item == self.other {
-			Err(Error::ShouldNotEqual(Box::new(self.other)).into())
+			Err(Error::ShouldNotEqual(DebugDisplay(&self.other).to_string()).into())
 		} else {
 			Ok(())
 		}

@@ -12,17 +12,18 @@ pub enum Error {
 	NoMatch { pattern: &'static str },
 }
 
+#[must_use]
 pub struct RegexRule<M> {
 	matcher: M,
 }
 
 impl RegexRule<Unset> {
-	#[must_use]
+	#[inline]
 	pub fn new() -> Self {
 		Self { matcher: Unset }
 	}
 
-	#[must_use]
+	#[inline]
 	pub fn pat(self, regex: &'static Regex) -> RegexRule<&'static Regex> {
 		RegexRule { matcher: regex }
 	}

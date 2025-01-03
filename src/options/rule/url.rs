@@ -7,7 +7,8 @@ pub struct UrlRule;
 
 impl UrlRule {
 	#[must_use]
-	pub fn new() -> Self {
+	#[inline]
+	pub const fn new() -> Self {
 		Self
 	}
 }
@@ -27,15 +28,14 @@ where
 
 #[cfg(test)]
 mod test {
-	use super::*;
-	use crate::Rule;
+	use super::UrlRule;
+	use crate::toolbox::test::*;
+
+	const rule: UrlRule = UrlRule::new();
 
 	#[test]
 	fn test_url() {
-		let url = UrlRule::new();
-		assert!(url.validate(&(), "https://example.com").is_ok());
-
-		let url = UrlRule::new();
-		assert!(url.validate(&(), "hello").is_err());
+		assert!(rule.validate(&(), "https://example.com").is_ok());
+		assert!(rule.validate(&(), "hello").is_err());
 	}
 }

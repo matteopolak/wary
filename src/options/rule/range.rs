@@ -17,6 +17,7 @@ pub trait Compare<B: ?Sized = Self> {
 	fn compare(&self, other: &B) -> Option<Ordering>;
 }
 
+#[must_use]
 pub struct RangeRule<Min, Max> {
 	min: Option<Min>,
 	max: Option<Max>,
@@ -25,7 +26,7 @@ pub struct RangeRule<Min, Max> {
 }
 
 impl RangeRule<Unset, Unset> {
-	#[must_use]
+	#[inline]
 	pub fn new() -> Self {
 		RangeRule {
 			min: None,
@@ -37,6 +38,7 @@ impl RangeRule<Unset, Unset> {
 }
 
 impl<Max> RangeRule<Unset, Max> {
+	#[inline]
 	pub fn min<Min>(self, min: Min) -> RangeRule<Min, Max> {
 		RangeRule {
 			min: Some(min),
@@ -46,6 +48,7 @@ impl<Max> RangeRule<Unset, Max> {
 		}
 	}
 
+	#[inline]
 	pub fn exclusive_min<Min>(self, min: Min) -> RangeRule<Min, Max> {
 		RangeRule {
 			min: Some(min),
@@ -57,6 +60,7 @@ impl<Max> RangeRule<Unset, Max> {
 }
 
 impl<Min> RangeRule<Min, Unset> {
+	#[inline]
 	pub fn max<Max>(self, max: Max) -> RangeRule<Min, Max> {
 		RangeRule {
 			min: self.min,
@@ -66,6 +70,7 @@ impl<Min> RangeRule<Min, Unset> {
 		}
 	}
 
+	#[inline]
 	pub fn exclusive_max<Max>(self, max: Max) -> RangeRule<Min, Max> {
 		RangeRule {
 			min: self.min,

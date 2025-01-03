@@ -43,6 +43,8 @@ pub enum Error {
 	#[cfg(feature = "regex")]
 	#[error(transparent)]
 	Regex(#[from] rule::regex::Error),
+	#[error(transparent)]
+	Required(#[from] rule::required::Error),
 	#[error("{code}")]
 	Custom {
 		code: &'static str,
