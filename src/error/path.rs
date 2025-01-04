@@ -1,18 +1,28 @@
+#![cfg_attr(not(feature = "alloc"), allow(dead_code))]
+
 use core::fmt;
 
+#[cfg(feature = "alloc")]
 use crate::alloc::{sync::Arc, vec::Vec};
+
+#[cfg(feature = "alloc")]
+type ArcNode = Arc<Node>;
+#[cfg(not(feature = "alloc"))]
+type ArcNode = ();
 
 /// A non-empty singly-linked list with O(1) append and [`Clone`].
 #[derive(Clone, Default)]
+#[cfg_attr(not(feature = "alloc"), derive(Debug))]
 pub enum Path {
 	#[default]
 	Empty,
 	NonEmpty {
-		head: Arc<Node>,
-		tail: Arc<Node>,
+		head: ArcNode,
+		tail: ArcNode,
 	},
 }
 
+#[cfg(feature = "alloc")]
 impl fmt::Debug for Path {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		let mut elems = self.clone().collect().into_iter();
@@ -29,6 +39,7 @@ impl fmt::Debug for Path {
 	}
 }
 
+#[cfg(feature = "alloc")]
 impl Path {
 	pub fn new<E: Into<Elem>>(elem: E) -> Self {
 		let node = Arc::new(Node::new(elem));
@@ -57,13 +68,33 @@ impl Path {
 	// TODO: use smallvec or something if this is too slow
 	/// Collects the path (and reverses it so it's "in order").
 	#[must_use]
-	pub fn collect(self) -> Vec<Elem> {
+	pub(crate) fn collect(self) -> Vec<Elem> {
 		let mut elems = self.into_iter().collect::<Vec<_>>();
 		// the iterator iterates in reverse
 		elems.reverse();
 		elems
 	}
+}
 
+#[cfg(not(feature = "alloc"))]
+impl Path {
+	pub fn new<E: Into<Elem>>(_elem: E) -> Self {
+		Self::NonEmpty {
+			tail: (),
+			head: (),
+		}
+	}
+
+	#[must_use]
+	pub fn append<E: Into<Elem>>(&self, _elem: E) -> Self {
+		Self::NonEmpty {
+			tail: (),
+			head: (),
+		}
+	}
+}
+
+impl Path {
 	#[must_use]
 	pub fn iter(&self) -> Iter<'_> {
 		self.into_iter()
@@ -77,7 +108,7 @@ pub struct Iter<'l> {
 impl Iterator for Iter<'_> {
 	type Item = Elem;
 
-	#[allow(clippy::print_stdout)]
+	#[cfg(feature = "alloc")]
 	fn next(&mut self) -> Option<Self::Item> {
 		let node = self.next?;
 
@@ -85,12 +116,18 @@ impl Iterator for Iter<'_> {
 
 		Some(node.elem)
 	}
+
+	#[cfg(not(feature = "alloc"))]
+	fn next(&mut self) -> Option<Self::Item> {
+		None
+	}
 }
 
 impl<'l> IntoIterator for &'l Path {
 	type IntoIter = Iter<'l>;
 	type Item = Elem;
 
+	#[cfg(feature = "alloc")]
 	fn into_iter(self) -> Self::IntoIter {
 		Iter {
 			next: match self {
@@ -98,6 +135,11 @@ impl<'l> IntoIterator for &'l Path {
 				Path::Empty => None,
 			},
 		}
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	fn into_iter(self) -> Self::IntoIter {
+		Iter { next: None }
 	}
 }
 
@@ -131,7 +173,7 @@ impl From<usize> for Elem {
 #[derive(Debug)]
 pub struct Node {
 	elem: Elem,
-	prev: Option<Arc<Node>>,
+	prev: Option<ArcNode>,
 }
 
 impl Node {

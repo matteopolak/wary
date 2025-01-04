@@ -4,7 +4,7 @@
 
 use core::fmt;
 
-use crate::{options::DebugDisplay, toolbox::rule::*};
+use crate::{options::{DebugDisplay, ItemSlice}, toolbox::rule::*};
 
 #[doc(hidden)]
 pub type Rule<S, Mode, Kind> = SuffixRule<S, Mode, Kind>;
@@ -16,9 +16,9 @@ pub enum Error {
 	#[error("expected string to not end with \"{0}\"")]
 	ShouldNotEndWith(&'static str),
 	#[error("expected slice to end with")]
-	ShouldEndWithSlice(String),
+	ShouldEndWithSlice(ItemSlice),
 	#[error("expected slice to not end with")]
-	ShouldNotEndWithSlice(String),
+	ShouldNotEndWithSlice(ItemSlice),
 }
 
 pub struct Str;

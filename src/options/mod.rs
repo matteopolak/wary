@@ -49,11 +49,20 @@ pub struct Unset;
 
 pub(crate) struct DebugDisplay<T>(pub T);
 
-impl<T> fmt::Display for DebugDisplay<T>
+#[cfg(feature = "alloc")]
+pub(crate) type ItemSlice = String;
+#[cfg(not(feature = "alloc"))]
+pub(crate) type ItemSlice = ();
+
+impl<T> DebugDisplay<T>
 where
 	T: fmt::Debug,
 {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-		self.0.fmt(f)
+	#[cfg(feature = "alloc")]
+	fn to_string(&self) -> String {
+		format!("{:?}", self.0)
 	}
+
+	#[cfg(not(feature = "alloc"))]
+	fn to_string(&self) {}
 }

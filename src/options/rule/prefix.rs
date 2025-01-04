@@ -4,7 +4,10 @@
 
 use core::fmt;
 
-use crate::{options::DebugDisplay, toolbox::rule::*};
+use crate::{
+	options::{DebugDisplay, ItemSlice},
+	toolbox::rule::*,
+};
 
 #[doc(hidden)]
 pub type Rule<P, Mode, Kind> = PrefixRule<P, Mode, Kind>;
@@ -21,9 +24,9 @@ pub enum Error {
 	#[error("expected string to not start with \"{0}\"")]
 	ShouldNotStartWith(&'static str),
 	#[error("expected slice to start with")]
-	ShouldStartWithSlice(String),
+	ShouldStartWithSlice(ItemSlice),
 	#[error("expected slice to not start with")]
-	ShouldNotStartWithSlice(String),
+	ShouldNotStartWithSlice(ItemSlice),
 }
 
 /// Rule for prefix validation.

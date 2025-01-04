@@ -168,6 +168,7 @@ where
 	}
 }
 
+#[cfg(feature = "alloc")]
 impl Compare<&str> for Cow<'_, str> {
 	#[inline]
 	fn compare(&self, other: &&str) -> Option<Ordering> {
@@ -175,6 +176,7 @@ impl Compare<&str> for Cow<'_, str> {
 	}
 }
 
+#[cfg(feature = "alloc")]
 impl Compare<Cow<'_, str>> for str {
 	#[inline]
 	fn compare(&self, other: &Cow<'_, str>) -> Option<Ordering> {
@@ -182,6 +184,7 @@ impl Compare<Cow<'_, str>> for str {
 	}
 }
 
+#[cfg(feature = "alloc")]
 impl Compare<&&str> for &'_ Cow<'_, str> {
 	#[inline]
 	fn compare(&self, other: &&&str) -> Option<Ordering> {
@@ -189,6 +192,7 @@ impl Compare<&&str> for &'_ Cow<'_, str> {
 	}
 }
 
+#[cfg(feature = "alloc")]
 impl Compare<&str> for String {
 	#[inline]
 	fn compare(&self, other: &&str) -> Option<Ordering> {
@@ -196,6 +200,7 @@ impl Compare<&str> for String {
 	}
 }
 
+#[cfg(feature = "alloc")]
 impl Compare<&&str> for String {
 	#[inline]
 	fn compare(&self, other: &&&str) -> Option<Ordering> {

@@ -29,7 +29,8 @@ once_cell = { version = "1", optional = true, default-features = false, features
 default = ["std", "derive"]
 full = ["email", "url", "regex", "semver", "graphemes"]
 
-std = []
+alloc = []
+std = ["alloc"]
 
 derive = ["dep:wary_derive"]
 # TODO: https://github.com/johnstonskj/rust-email_address/pull/36

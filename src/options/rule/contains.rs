@@ -4,7 +4,7 @@
 
 use core::fmt;
 
-use crate::{options::DebugDisplay, toolbox::rule::*};
+use crate::{options::{DebugDisplay, ItemSlice}, toolbox::rule::*};
 
 #[doc(hidden)]
 pub type Rule<C, Mode, Kind> = ContainsRule<C, Mode, Kind>;
@@ -16,9 +16,9 @@ pub enum Error {
 	#[error("found unexpected string \"{item}\" at position {position}")]
 	ShouldNotContain { position: usize, item: &'static str },
 	#[error("expected slice to contain")]
-	ShouldContainSlice(String),
+	ShouldContainSlice(ItemSlice),
 	#[error("found unexpected item at position {position}")]
-	ShouldNotContainSlice { position: usize, item: String },
+	ShouldNotContainSlice { position: usize, item: ItemSlice },
 }
 
 pub struct InOrder;

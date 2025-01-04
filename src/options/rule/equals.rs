@@ -4,7 +4,7 @@
 
 use core::fmt;
 
-use crate::{options::DebugDisplay, toolbox::rule::*};
+use crate::{options::{DebugDisplay, ItemSlice}, toolbox::rule::*};
 
 #[doc(hidden)]
 pub type Rule<O, Mode> = EqualsRule<O, Mode>;
@@ -13,10 +13,10 @@ pub struct Not;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
 pub enum Error {
-	#[error("expected to equal {0}")]
-	ShouldEqual(String),
-	#[error("expected to not equal {0}")]
-	ShouldNotEqual(String),
+	#[error("expected to equal")]
+	ShouldEqual(ItemSlice),
+	#[error("expected to not equal")]
+	ShouldNotEqual(ItemSlice),
 }
 
 /// Rule for equality validation.

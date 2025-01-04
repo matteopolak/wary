@@ -4,7 +4,7 @@
 [![<https://img.shields.io/docsrs/wary>](https://img.shields.io/docsrs/wary)](https://docs.rs/wary/latest/wary/)
 [![ci status](https://github.com/matteopolak/wary/workflows/ci/badge.svg)](https://github.com/matteopolak/wary/actions)
 
-A validation and transformation library.
+An optionally `no_std` and `no_alloc` validation and transformation library.
 
 - Basic usage
   - [Basic struct example](#basic-struct-example)

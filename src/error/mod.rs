@@ -2,10 +2,9 @@ mod path;
 
 pub use path::Path;
 
-use crate::{
-	alloc::{borrow::Cow, vec::Vec},
-	options::rule,
-};
+use crate::{options::rule};
+#[cfg(feature = "alloc")]
+use crate::alloc::{borrow::Cow, vec::Vec};
 
 #[derive(Debug, thiserror::Error, PartialEq)]
 #[non_exhaustive]
@@ -49,7 +48,10 @@ pub enum Error {
 	#[error("{code}")]
 	Custom {
 		code: &'static str,
+		#[cfg(feature = "alloc")]
 		message: Option<Cow<'static, str>>,
+		#[cfg(not(feature = "alloc"))]
+		message: Option<&'static str>,
 	},
 }
 
@@ -62,19 +64,29 @@ impl Error {
 		}
 	}
 
+	#[cfg(feature = "alloc")]
 	pub fn with_message(code: &'static str, message: impl Into<Cow<'static, str>>) -> Self {
 		Self::Custom {
 			code,
 			message: Some(message.into()),
 		}
 	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn with_message(code: &'static str, message: &'static str) -> Self {
+		Self::Custom { code, message: Some(message) }
+	}
 }
 
 #[derive(Debug, Default)]
 pub struct Report {
+	#[cfg(feature = "alloc")]
 	errors: Vec<(Path, Error)>,
+	#[cfg(not(feature = "alloc"))]
+	is_empty: bool,
 }
 
+#[cfg(feature = "alloc")]
 impl Report {
 	pub fn push(&mut self, path: Path, error: Error) {
 		self.errors.push((path, error));
@@ -83,6 +95,18 @@ impl Report {
 	#[must_use]
 	pub fn is_empty(&self) -> bool {
 		self.errors.is_empty()
+	}
+}
+
+#[cfg(not(feature = "alloc"))]
+impl Report {
+	pub fn push(&mut self, _path: Path, _error: Error) {
+		self.is_empty = false;
+	}
+
+	#[must_use]
+	pub fn is_empty(&self) -> bool {
+		self.is_empty
 	}
 }
 

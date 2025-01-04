@@ -13,12 +13,13 @@ pub mod error;
 pub mod options;
 
 #[doc(hidden)]
-#[cfg(not(any(test, feature = "std")))]
+#[cfg(all(not(feature = "std"), feature = "alloc"))]
 pub extern crate alloc;
+#[cfg(feature = "alloc")]
 use alloc::{string::String, vec::Vec};
 use core::option::Option;
 #[doc(hidden)]
-#[cfg(any(test, feature = "std"))]
+#[cfg(feature = "std")]
 pub use std as alloc;
 
 use error::Path;
@@ -64,6 +65,7 @@ pub mod toolbox {
 
 		pub use core::marker::PhantomData;
 
+		#[cfg(feature = "alloc")]
 		pub(crate) use crate::alloc::{
 			borrow::Cow,
 			boxed::Box,
@@ -266,6 +268,7 @@ impl<T> AsSlice for Option<T> {
 	}
 }
 
+#[cfg(feature = "alloc")]
 impl<T> AsSlice for Vec<T> {
 	type Item = T;
 
@@ -302,6 +305,7 @@ impl AsSlice for str {
 	}
 }
 
+#[cfg(feature = "alloc")]
 impl AsSlice for String {
 	type Item = u8;
 
@@ -336,6 +340,7 @@ impl<T> AsMutSlice for Option<T> {
 	}
 }
 
+#[cfg(feature = "alloc")]
 impl<T> AsMutSlice for Vec<T> {
 	#[inline]
 	fn as_mut_slice(&mut self) -> &mut [Self::Item] {

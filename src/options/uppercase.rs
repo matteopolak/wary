@@ -102,6 +102,7 @@ where
 	}
 }
 
+#[cfg(feature = "alloc")]
 impl crate::Modifier<String> for Uppercase<Unset> {
 	type Context = ();
 
