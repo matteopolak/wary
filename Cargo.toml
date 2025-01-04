@@ -3,7 +3,7 @@ members = [".", "wary_derive", "examples/*"]
 
 [package]
 name = "wary"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 description = "A simple validation library"
 license = "MIT OR Apache-2.0"
@@ -16,7 +16,7 @@ thiserror = { version = "2", default-features = false }
 email_address = { version = "0.2", default-features = false, optional = true }
 regex = { version = "1", optional = true, default-features = false }
 url = { version = "2", optional = true, default-features = false }
-wary_derive = { path = "wary_derive", version = "0.0.1", optional = true }
+wary_derive = { path = "wary_derive", version = "0.0.2", optional = true }
 semver = { version = "1", optional = true, default-features = false }
 unicode-segmentation = { version = "1", optional = true }
 serde = { version = "1", optional = true, default-features = false }
