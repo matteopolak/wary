@@ -1,3 +1,4 @@
+#![doc = include_str!("../README.md")]
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 #![warn(
 	clippy::pedantic,
@@ -7,7 +8,6 @@
 )]
 #![allow(clippy::new_without_default, clippy::wildcard_imports)]
 #![cfg_attr(test, allow(non_upper_case_globals))]
-#![doc = include_str!("../README.md")]
 
 pub mod error;
 pub mod options;
@@ -172,7 +172,7 @@ where
 	}
 }
 
-impl<T> Validate for &T
+impl<T: ?Sized> Validate for &T
 where
 	T: Validate,
 {
@@ -247,7 +247,7 @@ where
 
 impl<T> AsSlice for &mut T
 where
-	T: AsSlice,
+	T: AsSlice + ?Sized,
 {
 	type Item = T::Item;
 

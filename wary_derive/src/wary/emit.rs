@@ -2,18 +2,52 @@ use darling::{FromDeriveInput, ast};
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::{
+use super::{
 	modify::{Modify, ModifyFieldWrapper, ModifyOptions, ModifyVariant},
-	util::Fields,
 	validate::{Validate, ValidateFieldWrapper, ValidateOptions, ValidateVariant},
 };
+use crate::util::Fields;
 
-fn default_context() -> syn::Type {
-	syn::parse_quote! { () }
+fn default_context() -> Type {
+	Type(syn::parse_quote! { () })
 }
 
-fn default_crate_name() -> syn::Path {
-	syn::parse_quote! { ::wary }
+struct Type(syn::Type);
+
+impl darling::FromMeta for Type {
+	fn from_string(value: &str) -> darling::Result<Self> {
+		syn::parse_str(value)
+			.map(Self)
+			.map_err(|_| darling::Error::unknown_value(value))
+	}
+
+	fn from_value(value: &syn::Lit) -> darling::Result<Self> {
+		if let syn::Lit::Str(ref v) = *value {
+			v.parse()
+				.map(Self)
+				.map_err(|_| darling::Error::unknown_value(&v.value()).with_span(v))
+		} else {
+			Err(darling::Error::unexpected_lit_type(value))
+		}
+	}
+
+	fn from_meta(item: &syn::Meta) -> darling::Result<Self> {
+		let syn::Expr::Path(p) = &item.require_name_value()?
+			.value else {
+			return Err(darling::Error::unknown_value("expected a type"));
+		};
+
+		Ok(Self(syn::Type::Path(syn::TypePath {
+			qself: p.qself.clone(),
+			path: p.path.clone()
+		})))
+	}
+}
+
+impl darling::ToTokens for Type {
+	fn to_tokens(&self, tokens: &mut TokenStream) {
+		self.0.to_tokens(tokens);
+	}
 }
 
 #[derive(FromDeriveInput)]
@@ -24,8 +58,8 @@ pub struct Options {
 
 	/// The context type to use when validating.
 	#[darling(default = "default_context")]
-	context: syn::Type,
-	#[darling(default = "default_crate_name", rename = "crate")]
+	context: Type,
+	#[darling(default = "crate::default_crate_name", rename = "crate")]
 	crate_name: syn::Path,
 }
 

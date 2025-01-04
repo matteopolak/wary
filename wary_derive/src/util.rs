@@ -5,7 +5,7 @@ use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
 use syn::punctuated::Punctuated;
 
-use crate::{modify::ModifyFieldWrapper, validate::ValidateFieldWrapper};
+use crate::wary::{modify::ModifyFieldWrapper, validate::ValidateFieldWrapper};
 
 pub type Map<K, V> = VecMap<K, V>;
 

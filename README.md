@@ -9,13 +9,13 @@ A validation and transformation library.
 - Basic usage
   - [Basic struct example](#basic-struct-example)
   - [Basic enum example](#basic-enum-example)
+- [Accessing context](#context)
 - [Validation rules](#validation-rules)
   - [Implementing custom `Rule`s](#rule-custom)
   - [Implementing `Validate` manually](#manual-validate)
 - [Transformation rules](#transformation-rules)
   - [Implementing custom `Modifier`s](#modifier-custom)
   - [Implementing `Modify` manually](#manual-modify)
-- [Accessing context](#context) TODO, maybe make context generic like axum
 
 ### Basic struct example
 
@@ -60,21 +60,10 @@ struct Name<'n>(
   &'n mut str
 );
 
-impl wary::AsRef<str> for Name<'_> {
-  fn as_ref(&self) -> &str {
-    wary::AsRef::as_ref(&self.0)
-  }
-}
-
+// for length(bytes)
 impl wary::AsRef<[u8]> for Name<'_> {
   fn as_ref(&self) -> &[u8] {
     self.0.as_bytes()
-  }
-}
-
-impl wary::AsMut<str> for Name<'_> {
-  fn as_mut(&mut self) -> &mut str {
-    wary::AsMut::as_mut(&mut self.0)
   }
 }
 
@@ -109,6 +98,63 @@ if let Err(report) = person.wary(&()) {
 
   assert_eq!(name.0, "jane");
 }
+```
+
+## Accessing context <a id="context"></a>
+
+```rust
+use wary::Wary;
+use wary::toolbox::rule::*;
+use std::ops::Range;
+
+// allows one context to be passed to all rules
+#[derive(AsRef)]
+struct Context {
+  range: Range<u8>,
+  #[as_ref(skip)]
+  useless: bool,
+}
+
+struct RangeRule<C> {
+  ctx: PhantomData<C>,
+}
+
+impl<C> RangeRule<C> {
+  fn new() -> Self {
+    Self {
+      ctx: PhantomData,
+    }
+  }
+}
+
+impl<C> wary::Rule<u8> for RangeRule<C>
+where
+  C: AsRef<Range<u8>>,
+{
+  type Context = C;
+
+  fn validate(&self, ctx: &Self::Context, item: &u8) -> Result<()> {
+    if ctx.as_ref().contains(item) {
+      Ok(())
+    } else {
+      Err(wary::Error::with_message("out_of_range", "The number is out of range"))
+    }
+  }
+}
+
+#[allow(non_camel_case_types)]
+mod rule {
+  pub type range<C> = super::RangeRule<C>;
+}
+
+#[derive(Wary)]
+#[wary(context = Context)]
+struct Age {
+  #[validate(custom(range))]
+  number: u8,
+}
+
+# fn main() {}
 ```
 
 ## Validation rules
@@ -210,7 +256,8 @@ struct Name(
 Validates the input with a custom [`Rule`](wary::Rule).
 
 ```rust
-use wary::{Wary, Error, Rule, AsRef};
+use wary::Wary;
+use wary::toolbox::rule::*;
 
 struct SecretRule;
 
@@ -220,13 +267,13 @@ impl SecretRule {
   }
 }
 
-impl<I> Rule<I> for SecretRule
+impl<I> wary::Rule<I> for SecretRule
 where
   I: AsRef<str>,
 {
   type Context = ();
 
-  fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), Error> {
+  fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
     let string = item.as_ref();
 
     if string.contains("secret") {
