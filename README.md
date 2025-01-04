@@ -129,8 +129,8 @@ and `#[validate(alphanumeric())]` are equivalent.
 | [`custom`](#rule-custom) | [`Rule<T>`](wary::Rule) | - |
 | [`dive`](#rule-dive) | [`Validate`](wary::Validate) | - |
 | [`email`](#rule-email) | [`AsRef<str>`](wary::AsRef) | `email` |
-| [`equals`](#rule-equals) | [`std::cmp::PartialEq`] | - |
-| [`func`](#rule-func) | [`Fn(&T) -> Result<(), wary::Error>`] | - |
+| [`equals`](#rule-equals) | [`std::cmp::PartialEq`](std::cmp::PartialEq) | - |
+| [`func`](#rule-func) | `Fn(&T) -> Result<(), wary::Error>` | - |
 | [`inner`](#rule-inner) | [`AsSlice`](wary::AsSlice) | - |
 | [`length`](#rule-length) | [`Length`](wary::Length) | `graphemes` (optional, for `graphemes` length) |
 | [`lowercase`](#rule-lowercase) | [`AsRef<str>`](wary::AsRef) | - |
@@ -503,7 +503,7 @@ struct Url(
 );
 ```
 
-### Implementing `Validate` manualy <a id="manual-validate"></a>
+### Implementing `Validate` manually <a id="manual-validate"></a>
 
 In the rare case you need to manually implement `Validate`, you will need to keep in mind about reporting errors properly.
 
@@ -635,7 +635,7 @@ struct Name {
 }
 ```
 
-### Implementing `Modify` manualy <a id="manual-modify"></a>
+### Implementing `Modify` manually <a id="manual-modify"></a>
 
 ```rust
 use wary::Modify;
