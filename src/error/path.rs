@@ -79,18 +79,12 @@ impl Path {
 #[cfg(not(feature = "alloc"))]
 impl Path {
 	pub fn new<E: Into<Elem>>(_elem: E) -> Self {
-		Self::NonEmpty {
-			tail: (),
-			head: (),
-		}
+		Self::NonEmpty { tail: (), head: () }
 	}
 
 	#[must_use]
 	pub fn append<E: Into<Elem>>(&self, _elem: E) -> Self {
-		Self::NonEmpty {
-			tail: (),
-			head: (),
-		}
+		Self::NonEmpty { tail: (), head: () }
 	}
 }
 
