@@ -131,13 +131,9 @@ impl ModifyField {
 			let inner = inner.to_token_stream(crate_name, field, ty, false);
 
 			tokens.extend(quote! {
-				#crate_name::Modifier::modify(
-					&#crate_name::options::modifier::inner::Modifier::new(|#field| {
-						#inner
-					}),
-					&(),
-					#field
-				);
+				for mut #field in #crate_name::AsMutSlice::as_mut_slice(#field) {
+					#inner
+				}
 			});
 		}
 

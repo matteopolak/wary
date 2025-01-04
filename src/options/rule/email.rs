@@ -1,3 +1,7 @@
+//! Rule for email validation.
+//!
+//! See [`EmailRule`] for more information.
+
 use core::str::FromStr;
 
 use crate::toolbox::rule::*;
@@ -5,12 +9,37 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule = EmailRule;
 
+/// Rule for email validation.
+///
+/// # Example
+///
+/// ```
+/// use wary::{Wary, Validate};
+///
+/// #[derive(Wary)]
+/// struct Person {
+///   #[validate(email)]
+///   email: String,
+/// }
+///
+/// let person = Person {
+///   email: "hello@email.com".into(),
+/// };
+///
+/// assert!(person.validate(&()).is_ok());
+///
+/// let person = Person {
+///   email: "hello".into(),
+/// };
+///
+/// assert!(person.validate(&()).is_err());
+/// ```
 #[must_use]
 pub struct EmailRule;
 
 impl EmailRule {
 	#[inline]
-	pub fn new() -> Self {
+	pub const fn new() -> Self {
 		Self
 	}
 }

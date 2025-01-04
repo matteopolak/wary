@@ -1,8 +1,40 @@
+//! Rule for URL validation.
+//!
+//! See [`UrlRule`] for more information.
+
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
 pub type Rule = UrlRule;
 
+/// Rule for URL validation.
+///
+/// # Example
+///
+/// ```
+/// use wary::{Wary, Validate};
+///
+/// #[derive(Wary)]
+/// struct Image {
+///   label: String,
+///   #[validate(url)]
+///   src: String,
+/// }
+///
+/// let image = Image {
+///   label: "My cat".into(),
+///   src: "https://example.com/cat.jpg".into(),
+/// };
+///
+/// assert!(image.validate(&()).is_ok());
+///
+/// let image = Image {
+///   label: "My cat".into(),
+///   src: "hello".into(),
+/// };
+///
+/// assert!(image.validate(&()).is_err());
+/// ```
 pub struct UrlRule;
 
 impl UrlRule {

@@ -1,3 +1,7 @@
+//! Rule and modifier for ensuring that a string is entirely uppercase.
+//!
+//! See [`Uppercase`] for more information.
+
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
@@ -5,15 +9,42 @@ pub type Rule<Mode> = Uppercase<Mode>;
 #[doc(hidden)]
 pub type Modifier<Mode> = Uppercase<Mode>;
 
+pub struct Ascii;
+
+/// Rule and modifier for ensuring that a string is entirely uppercase.
+///
+/// # Example
+///
+/// ```
+/// use wary::Wary;
+///
+/// #[derive(Wary)]
+/// struct Person {
+///   #[validate(uppercase)]
+///   name: String,
+///   #[validate(uppercase(ascii))]
+///   greeting: String,
+///   #[modify(uppercase)]
+///   message: String,
+/// }
+///
+/// let mut person = Person {
+///   name: "HELLO".into(),
+///   greeting: "HELLO".into(),
+///   message: "hello".into(),
+/// };
+///
+/// assert!(person.wary(&()).is_ok());
+/// assert_eq!(person.message, "HELLO");
+/// ```
+#[must_use]
 pub struct Uppercase<Mode> {
 	mode: PhantomData<Mode>,
 }
 
-pub struct Ascii;
-
 impl Uppercase<Unset> {
-	#[must_use]
-	pub fn new() -> Self {
+	#[inline]
+	pub const fn new() -> Self {
 		Self { mode: PhantomData }
 	}
 
@@ -25,8 +56,8 @@ impl Uppercase<Unset> {
 	///
 	/// Uses [`str::make_ascii_uppercase`] to convert in-place instead
 	/// of requiring a new allocation with [`str::to_uppercase`].
-	#[must_use]
-	pub fn ascii(self) -> Uppercase<Ascii> {
+	#[inline]
+	pub const fn ascii(self) -> Uppercase<Ascii> {
 		Uppercase { mode: PhantomData }
 	}
 }

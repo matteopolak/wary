@@ -1,13 +1,42 @@
+//! Rule for ASCII validation.
+//!
+//! See [`AsciiRule`] for more information.
+
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
 pub type Rule = AsciiRule;
 
+/// Rule for ASCII validation.
+///
+/// # Example
+///
+/// ```
+/// use wary::{Wary, Validate};
+///
+/// #[derive(Wary)]
+/// struct Person {
+///   #[validate(ascii)]
+///   name: String,
+/// }
+///
+/// let person = Person {
+///   name: "hello".into(),
+/// };
+///
+/// assert!(person.validate(&()).is_ok());
+///
+/// let person = Person {
+///   name: "hello 😃".into(),
+/// };
+///
+/// assert!(person.validate(&()).is_err());
+/// ```
 pub struct AsciiRule;
 
 impl AsciiRule {
 	#[must_use]
-	pub fn new() -> Self {
+	pub const fn new() -> Self {
 		Self
 	}
 }

@@ -1,8 +1,34 @@
+//! Rule for semantic versioning validation.
+//!
+//! See [`SemverRule`] for more information.
+
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
 pub type Rule = SemverRule;
 
+/// Rule for semantic versioning validation.
+///
+/// # Example
+///
+/// ```
+/// use wary::{Wary, Validate};
+///
+/// #[derive(Wary)]
+/// struct Version {
+///   #[validate(semver)]
+///   version: &'static str,
+/// }
+///
+/// let version = Version { version: "1.2.3" };
+/// assert!(version.validate(&()).is_ok());
+///
+/// let version = Version { version: "1.2.3-alpha" };
+/// assert!(version.validate(&()).is_ok());
+///
+/// let version = Version { version: "blah" };
+/// assert!(version.validate(&()).is_err());
+/// ```
 #[must_use]
 pub struct SemverRule;
 

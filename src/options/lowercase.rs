@@ -1,3 +1,7 @@
+//! Rule and modifier for ensuring that a string is entirely lowercase.
+//!
+//! See [`Lowercase`] for more information.
+
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
@@ -5,15 +9,42 @@ pub type Rule<Mode> = Lowercase<Mode>;
 #[doc(hidden)]
 pub type Modifier<Mode> = Lowercase<Mode>;
 
+pub struct Ascii;
+
+/// Rule and modifier for ensuring that a string is entirely lowercase.
+///
+/// # Example
+///
+/// ```
+/// use wary::Wary;
+///
+/// #[derive(Wary)]
+/// struct Person {
+///   #[validate(lowercase)]
+///   name: String,
+///   #[validate(lowercase(ascii))]
+///   greeting: String,
+///   #[modify(lowercase)]
+///   message: String,
+/// }
+///
+/// let mut person = Person {
+///   name: "hello".into(),
+///   greeting: "hello".into(),
+///   message: "HELLO".into(),
+/// };
+///
+/// assert!(person.wary(&()).is_ok());
+/// assert_eq!(person.message, "hello");
+/// ```
+#[must_use]
 pub struct Lowercase<Mode> {
 	mode: PhantomData<Mode>,
 }
 
-pub struct Ascii;
-
 impl Lowercase<Unset> {
-	#[must_use]
-	pub fn new() -> Self {
+	#[inline]
+	pub const fn new() -> Self {
 		Self { mode: PhantomData }
 	}
 
@@ -25,8 +56,8 @@ impl Lowercase<Unset> {
 	///
 	/// Uses [`str::make_ascii_lowercase`] to convert in-place instead
 	/// of requiring a new allocation with [`str::to_lowercase`].
-	#[must_use]
-	pub fn ascii(self) -> Lowercase<Ascii> {
+	#[inline]
+	pub const fn ascii(self) -> Lowercase<Ascii> {
 		Lowercase { mode: PhantomData }
 	}
 }

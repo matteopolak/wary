@@ -1,3 +1,7 @@
+//! Rule for requring a value to be empty or not empty.
+//!
+//! See [`RequiredRule`] for more information.
+
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
@@ -13,6 +17,43 @@ pub enum Error {
 
 pub struct Not;
 
+/// Rule for requring a value to be empty or not empty.
+///
+/// # Example
+///
+/// ```
+/// use wary::{Wary, Validate};
+///
+/// #[derive(Wary)]
+/// struct Person {
+///   #[validate(required)]
+///   name: String,
+///   #[validate(required(not))]
+///   numbers: Vec<u8>,
+///   #[validate(required)]
+///   greeting: Option<String>,
+///   #[validate(required, inner(required))]
+///   nested: Option<Option<String>>,
+/// }
+///
+/// let person = Person {
+///   name: "hello".into(), // good
+///   numbers: vec![1, 2, 3], // error, should be empty
+///   greeting: None, // error, should not be empty
+///   nested: Some(None), // error, should not be empty
+/// };
+///
+/// assert!(person.validate(&()).is_err());
+///
+/// let person = Person {
+///   name: "hello".into(), // good
+///   numbers: vec![], // good
+///   greeting: Some("hello".into()), // good
+///   nested: Some(None), // good. inner(required) is applied to the nested String
+/// };
+///
+/// assert!(person.validate(&()).is_ok());
+/// ```
 #[must_use]
 pub struct RequiredRule<Mode> {
 	mode: PhantomData<Mode>,
@@ -24,6 +65,25 @@ impl RequiredRule<Unset> {
 		Self { mode: PhantomData }
 	}
 
+	/// Require the value to be empty.
+	///
+	/// # Example
+	///
+	/// ```
+	/// use wary::{Wary, Validate};
+	///
+	/// #[derive(Wary)]
+	/// struct Person {
+	///  #[validate(required(not))]
+	///  name: String,
+	/// }
+	///
+	/// let person = Person {
+	///   name: "hello".into(), // error, should be empty
+	/// };
+	///
+	/// assert!(person.validate(&()).is_err());
+	/// ```
 	#[inline]
 	pub const fn not(self) -> RequiredRule<Not> {
 		RequiredRule { mode: PhantomData }
@@ -87,7 +147,7 @@ mod test {
 		assert!(rule.validate(&(), &vec![1, 2, 3]).is_ok());
 		assert!(rule.validate(&(), "hello").is_ok());
 
-		assert!(rule.validate(&(), &[] as &[i32; 0]).is_err());
+		assert!(rule.validate(&(), &[0; 0]).is_err());
 		assert!(rule.validate(&(), &Vec::<i32>::new()).is_err());
 		assert!(rule.validate(&(), "").is_err());
 
@@ -95,7 +155,7 @@ mod test {
 		assert!(not.validate(&(), &vec![1, 2, 3]).is_err());
 		assert!(not.validate(&(), "hello").is_err());
 
-		assert!(not.validate(&(), &[] as &[i32; 0]).is_ok());
+		assert!(not.validate(&(), &[0; 0]).is_ok());
 		assert!(not.validate(&(), &Vec::<i32>::new()).is_ok());
 		assert!(not.validate(&(), "").is_ok());
 	}

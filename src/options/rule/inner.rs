@@ -1,8 +1,3 @@
-//! Built-in to the derive macro since
-//! [`Validate::validate`](crate::Validate::validate) would need to take `&mut
-//! self` as receiver in order to modify the associated
-//! [`Report`](crate::error::Report).
-
 #[cfg(test)]
 mod test {
 	use crate::toolbox::test::*;

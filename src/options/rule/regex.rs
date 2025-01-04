@@ -1,3 +1,7 @@
+//! Rule for validating a value against a regular expression.
+//!
+//! See [`RegexRule`] for more information.
+
 #[doc(hidden)]
 pub use regex::Regex;
 
@@ -12,6 +16,27 @@ pub enum Error {
 	NoMatch { pattern: &'static str },
 }
 
+/// Rule for validating a value against a regular expression.
+///
+/// # Example
+///
+/// ```
+/// use wary::{Wary, Validate};
+///
+/// #[derive(Wary)]
+/// struct Text {
+///   #[validate(regex(pat = "^a+"))]
+///   a: &'static str,
+///   #[validate(regex(pat = "^b+"))]
+///   b: &'static str,
+/// }
+///
+/// let text = Text { a: "aaa", b: "bbb" };
+/// assert!(text.validate(&()).is_ok());
+///
+/// let text = Text { a: "aaa", b: "ccc" };
+/// assert!(text.validate(&()).is_err());
+/// ```
 #[must_use]
 pub struct RegexRule<M> {
 	matcher: M,
@@ -19,10 +44,15 @@ pub struct RegexRule<M> {
 
 impl RegexRule<Unset> {
 	#[inline]
-	pub fn new() -> Self {
+	pub const fn new() -> Self {
 		Self { matcher: Unset }
 	}
 
+	/// Set the regular expression pattern to match.
+	///
+	/// This can either be a literal string or a compiled regular expression
+	/// in some sort of static container like [`LazyCell`](std::cell::LazyCell) or
+	/// [`OnceCell`](std::cell::OnceCell).
 	#[inline]
 	pub fn pat(self, regex: &'static Regex) -> RegexRule<&'static Regex> {
 		RegexRule { matcher: regex }

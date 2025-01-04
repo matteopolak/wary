@@ -1,14 +1,43 @@
+//! Rule for alphanumeric validation.
+//!
+//! See [`AlphanumericRule`] for more information.
+
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
 pub type Rule = AlphanumericRule;
 
+/// Rule for alphanumeric validation.
+///
+/// # Example
+///
+/// ```
+/// use wary::{Wary, Validate};
+///
+/// #[derive(Wary)]
+/// struct Person {
+///   #[validate(alphanumeric)]
+///   name: String,
+/// }
+///
+/// let person = Person {
+///   name: "hello123".into(),
+/// };
+///
+/// assert!(person.validate(&()).is_ok());
+///
+/// let person = Person {
+///   name: "hello world".into(),
+/// };
+///
+/// assert!(person.validate(&()).is_err());
+/// ```
 #[must_use]
 pub struct AlphanumericRule;
 
 impl AlphanumericRule {
 	#[inline]
-	pub fn new() -> Self {
+	pub const fn new() -> Self {
 		Self
 	}
 }

@@ -1,3 +1,7 @@
+//! Rule for address validation.
+//!
+//! See [`AddrRule`] for more information.
+
 use core::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 use crate::toolbox::rule::*;
@@ -19,6 +23,35 @@ pub struct Ip;
 pub struct IpV4;
 pub struct IpV6;
 
+/// Rule for address validation.
+///
+/// # Example
+///
+/// ```
+/// use wary::{Wary, Validate};
+///
+/// #[derive(Wary)]
+/// struct Packet {
+///   #[validate(addr(ipv4))]
+///   src: String,
+///   #[validate(addr(ipv6))]
+///   dst: String,
+/// }
+///
+/// let packet = Packet {
+///   src: "192.168.1.1".into(),
+///   dst: "2001:0db8:85a3:0000:0000:8a2e:0370:7334".into(),
+/// };
+///
+/// assert!(packet.validate(&()).is_ok());
+///
+/// let packet = Packet {
+///   src: "1.2.3.4.5".into(),
+///   dst: "localhost".into(),
+/// };
+///
+/// assert!(packet.validate(&()).is_err());
+/// ```
 #[must_use]
 pub struct AddrRule<Mode> {
 	mode: PhantomData<Mode>,
@@ -26,24 +59,24 @@ pub struct AddrRule<Mode> {
 
 impl AddrRule<Ip> {
 	#[inline]
-	pub fn new() -> AddrRule<Ip> {
+	pub const fn new() -> AddrRule<Ip> {
 		AddrRule { mode: PhantomData }
 	}
 }
 
 impl<M> AddrRule<M> {
 	#[inline]
-	pub fn ipv4(self) -> AddrRule<IpV4> {
+	pub const fn ipv4(self) -> AddrRule<IpV4> {
 		AddrRule { mode: PhantomData }
 	}
 
 	#[inline]
-	pub fn ipv6(self) -> AddrRule<IpV6> {
+	pub const fn ipv6(self) -> AddrRule<IpV6> {
 		AddrRule { mode: PhantomData }
 	}
 
 	#[inline]
-	pub fn ip(self) -> AddrRule<Ip> {
+	pub const fn ip(self) -> AddrRule<Ip> {
 		AddrRule { mode: PhantomData }
 	}
 }

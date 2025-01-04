@@ -1,3 +1,7 @@
+//! Rule for length validation.
+//!
+//! See [`LengthRule`] for more information.
+
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
@@ -19,6 +23,39 @@ pub enum Error {
 	},
 }
 
+/// Rule for length validation.
+///
+/// # Example
+///
+/// ```
+/// use wary::{Wary, Validate};
+///
+/// #[derive(Wary)]
+/// struct Person {
+///   #[validate(length(chars, 5..=10))]
+///   name: String,
+///   #[validate(length(5..10))]
+///   numbers: Vec<u8>,
+///   #[validate(length(bytes, 1..))]
+///   greeting: String,
+/// }
+///
+/// let person = Person {
+///   name: "hello".into(),
+///   numbers: vec![1, 2, 3, 4, 5],
+///   greeting: "hi".into(),
+/// };
+///
+/// assert!(person.validate(&()).is_ok());
+///
+/// let person = Person {
+///   name: "hello".into(),
+///   numbers: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+///   greeting: "hi".into(),
+/// };
+///
+/// assert!(person.validate(&()).is_err());
+/// ```
 #[must_use]
 pub struct LengthRule<Mode> {
 	min: usize,
@@ -36,7 +73,7 @@ pub struct Graphemes;
 
 impl LengthRule<Unset> {
 	#[inline]
-	pub fn new() -> Self {
+	pub const fn new() -> Self {
 		Self {
 			min: usize::MIN,
 			max: usize::MAX,
@@ -46,8 +83,9 @@ impl LengthRule<Unset> {
 		}
 	}
 
+	/// Set the length mode to count in UTF-8 characters.
 	#[inline]
-	pub fn chars(self) -> LengthRule<Chars> {
+	pub const fn chars(self) -> LengthRule<Chars> {
 		LengthRule {
 			min: self.min,
 			max: self.max,
@@ -57,8 +95,9 @@ impl LengthRule<Unset> {
 		}
 	}
 
+	/// Set the length mode to count in bytes.
 	#[inline]
-	pub fn bytes(self) -> LengthRule<Bytes> {
+	pub const fn bytes(self) -> LengthRule<Bytes> {
 		LengthRule {
 			min: self.min,
 			max: self.max,
@@ -68,8 +107,9 @@ impl LengthRule<Unset> {
 		}
 	}
 
+	/// Set the length mode to count in UTF-16 code units.
 	#[inline]
-	pub fn code_units(self) -> LengthRule<CodeUnits> {
+	pub const fn code_units(self) -> LengthRule<CodeUnits> {
 		LengthRule {
 			min: self.min,
 			max: self.max,
@@ -79,9 +119,10 @@ impl LengthRule<Unset> {
 		}
 	}
 
+	/// Set the length mode to count in grapheme clusters.
 	#[cfg(feature = "graphemes")]
 	#[inline]
-	pub fn graphemes(self) -> LengthRule<Graphemes> {
+	pub const fn graphemes(self) -> LengthRule<Graphemes> {
 		LengthRule {
 			min: self.min,
 			max: self.max,
@@ -93,29 +134,33 @@ impl LengthRule<Unset> {
 }
 
 impl<Mode> LengthRule<Mode> {
+	/// Set the minimum length (inclusive).
 	#[inline]
-	pub fn min(mut self, min: usize) -> Self {
+	pub const fn min(mut self, min: usize) -> Self {
 		self.min = min;
 		self.exclusive_min = false;
 		self
 	}
 
+	/// Set the maximum length (inclusive).
 	#[inline]
-	pub fn max(mut self, max: usize) -> Self {
+	pub const fn max(mut self, max: usize) -> Self {
 		self.max = max;
 		self.exclusive_max = false;
 		self
 	}
 
+	/// Set the minimum length (exclusive).
 	#[inline]
-	pub fn exclusive_min(mut self, min: usize) -> Self {
+	pub const fn exclusive_min(mut self, min: usize) -> Self {
 		self.min = min;
 		self.exclusive_min = true;
 		self
 	}
 
+	/// Set the maximum length (exclusive).
 	#[inline]
-	pub fn exclusive_max(mut self, max: usize) -> Self {
+	pub const fn exclusive_max(mut self, max: usize) -> Self {
 		self.max = max;
 		self.exclusive_max = true;
 		self
@@ -123,7 +168,7 @@ impl<Mode> LengthRule<Mode> {
 
 	#[inline]
 	fn check(&self, len: usize) -> Result<()> {
-		if len < self.min {
+		if len < self.min || len == self.min && self.exclusive_min {
 			return Err(
 				Error::TooShort {
 					min: self.min,
@@ -134,7 +179,7 @@ impl<Mode> LengthRule<Mode> {
 			);
 		}
 
-		if len > self.max {
+		if len > self.max || len == self.max && self.exclusive_max {
 			return Err(
 				Error::TooLong {
 					max: self.max,

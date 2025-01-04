@@ -52,6 +52,9 @@ pub struct ValidateField {
 
 	dive: darling::util::Flag,
 
+	#[darling(default)]
+	required: Option<Option<Args>>,
+
 	#[darling(flatten)]
 	builtin: Map<syn::Path, Option<Args>>,
 }
@@ -76,6 +79,9 @@ pub struct ValidateFieldWrapper {
 
 	dive: darling::util::Flag,
 
+	#[darling(default)]
+	required: Option<Option<Args>>,
+
 	#[darling(flatten)]
 	builtin: Map<syn::Path, Option<Args>>,
 }
@@ -93,6 +99,20 @@ impl ValidateField {
 		let option_path = crate::attr::extract_option_path(ty);
 
 		let field_path = field.path();
+
+		if option_path.is_none() {
+			if let Some(args) = &self.required {
+				tokens.extend(quote! {
+					if let Err(e) = #crate_name::Rule::validate(
+						&#crate_name::options::rule::required::Rule::new() #args,
+						&(),
+						#field
+					) {
+						__wary_report.push(__wary_parent.append(#field_path), e);
+					};
+				});
+			}
+		}
 
 		for (path, args) in self.builtin.iter_mut() {
 			let args_ref = args.as_ref().map(ArgsRef);
@@ -142,7 +162,7 @@ impl ValidateField {
 
 			tokens.extend(quote! {
 				if let Err(e) = (|| {
-					for #field in #crate_name::AsSlice::as_slice(&#field) {
+					for #field in #crate_name::AsSlice::as_slice(#field) {
 						#inner
 					}
 
@@ -222,14 +242,33 @@ impl ValidateField {
 			});
 		}
 
-		if top {
-			if let Some(ref option_path) = option_path {
-				return quote! {
+		if let Some(ref option_path) = option_path {
+			let el = self.required.as_ref().map_or_else(
+				|| quote!(if false {}),
+				|args| {
+					quote! {
+						if let Err(e) = #crate_name::Rule::validate(
+							&#crate_name::options::rule::required::Rule::new() #args,
+							&(),
+							#field
+						) {
+							__wary_report.push(__wary_parent.append(#field_path), e);
+						};
+					}
+				},
+			);
+
+			return if top {
+				quote! {
 					if let #option_path ::Some(#field) = #field {
 						#tokens
-					}
-				};
-			}
+					} else #el
+				}
+			} else {
+				quote! {
+					#el
+				}
+			};
 		}
 
 		tokens
@@ -249,6 +288,7 @@ impl ValidateOptions {
 			and: Tuple::default(),
 			dive: darling::util::Flag::default(),
 			inner: None,
+			required: None,
 			builtin: Map::default(),
 		}
 		.to_token_stream(
@@ -269,6 +309,7 @@ impl ValidateFieldWrapper {
 			custom: self.custom,
 			inner: self.inner,
 			builtin: self.builtin,
+			required: self.required,
 			dive: self.dive,
 		}
 	}

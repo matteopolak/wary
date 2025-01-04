@@ -1,12 +1,13 @@
-use crate::toolbox::rule::*;
+//! Rule for suffix validation.
+//!
+//! See [`SuffixRule`] for more information.
+
+use core::fmt;
+
+use crate::{options::DebugDisplay, toolbox::rule::*};
 
 #[doc(hidden)]
 pub type Rule<S, Mode, Kind> = SuffixRule<S, Mode, Kind>;
-
-pub struct Str;
-pub struct Slice;
-
-pub struct Not;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
 pub enum Error {
@@ -15,11 +16,52 @@ pub enum Error {
 	#[error("expected string to not end with \"{0}\"")]
 	ShouldNotEndWith(&'static str),
 	#[error("expected slice to end with")]
-	ShouldEndWithSlice,
+	ShouldEndWithSlice(String),
 	#[error("expected slice to not end with")]
-	ShouldNotEndWithSlice,
+	ShouldNotEndWithSlice(String),
 }
 
+pub struct Str;
+pub struct Slice;
+pub struct Not;
+
+/// Rule for suffix validation.
+///
+/// # Example
+///
+/// ```
+/// use wary::{Wary, Validate};
+///
+/// #[derive(Wary)]
+/// struct Person {
+///   #[validate(suffix(str = "hello"))]
+///   name: String,
+///   #[validate(suffix(slice = [5, 6, 7, 8]))]
+///   numbers: Vec<u8>,
+///   #[validate(suffix(not, str = "world"))]
+///   greeting: String,
+///   #[validate(suffix(not, slice = [1, 2, 3, 4]))]
+///   more_numbers: Vec<u8>,
+/// }
+///
+/// let person = Person {
+///   name: "world hello".into(),
+///   numbers: vec![1, 2, 3, 4, 5, 6, 7, 8],
+///   greeting: "world hello".into(),
+///   more_numbers: vec![5, 6, 7, 8, 9, 10],
+/// };
+///
+/// assert!(person.validate(&()).is_ok());
+///
+/// let person = Person {
+///   name: "hello world".into(),
+///   numbers: vec![5, 6, 7, 8, 9, 10],
+///   greeting: "hello world".into(),
+///   more_numbers: vec![1, 2, 3, 4, 5, 6, 7, 8],
+/// };
+///
+/// assert!(person.validate(&()).is_err());
+/// ```
 #[must_use]
 pub struct SuffixRule<S, Mode, Kind> {
 	suffix: S,
@@ -39,6 +81,7 @@ impl SuffixRule<Unset, Unset, Unset> {
 }
 
 impl<M> SuffixRule<Unset, M, Unset> {
+	/// Ensure the input ends with the given string.
 	#[inline]
 	pub fn str(self, suffix: &'static str) -> SuffixRule<&'static str, M, Str> {
 		SuffixRule {
@@ -48,6 +91,7 @@ impl<M> SuffixRule<Unset, M, Unset> {
 		}
 	}
 
+	/// Ensure the input ends with the given slice.
 	#[inline]
 	pub fn slice<S>(self, suffix: S) -> SuffixRule<S, M, Slice> {
 		SuffixRule {
@@ -59,6 +103,7 @@ impl<M> SuffixRule<Unset, M, Unset> {
 }
 
 impl<S, K> SuffixRule<S, Unset, K> {
+	/// Inverts the rule.
 	#[inline]
 	pub fn not(self) -> SuffixRule<S, Not, K> {
 		SuffixRule {
@@ -72,7 +117,7 @@ impl<S, K> SuffixRule<S, Unset, K> {
 impl<I: ?Sized, P, O> crate::Rule<I> for SuffixRule<P, Unset, Slice>
 where
 	I: AsSlice<Item = O>,
-	P: AsSlice<Item = O>,
+	P: AsSlice<Item = O> + fmt::Debug,
 	O: PartialEq,
 {
 	type Context = ();
@@ -85,7 +130,7 @@ where
 		if inner.ends_with(suffix) {
 			Ok(())
 		} else {
-			Err(Error::ShouldEndWithSlice.into())
+			Err(Error::ShouldEndWithSlice(DebugDisplay(&self.suffix).to_string()).into())
 		}
 	}
 }
@@ -93,7 +138,7 @@ where
 impl<I: ?Sized, P, O> crate::Rule<I> for SuffixRule<P, Not, Slice>
 where
 	I: AsSlice<Item = O>,
-	P: AsSlice<Item = O>,
+	P: AsSlice<Item = O> + fmt::Debug,
 	O: PartialEq,
 {
 	type Context = ();
@@ -104,7 +149,7 @@ where
 		let suffix = self.suffix.as_slice();
 
 		if inner.ends_with(suffix) {
-			Err(Error::ShouldNotEndWithSlice.into())
+			Err(Error::ShouldNotEndWithSlice(DebugDisplay(&self.suffix).to_string()).into())
 		} else {
 			Ok(())
 		}

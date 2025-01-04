@@ -1,3 +1,7 @@
+//! Rule for checking if a value is within a range.
+//!
+//! See [`RangeRule`] for more information.
+
 use std::{borrow::Cow, cmp::Ordering};
 
 use crate::toolbox::rule::*;
@@ -17,6 +21,29 @@ pub trait Compare<B: ?Sized = Self> {
 	fn compare(&self, other: &B) -> Option<Ordering>;
 }
 
+/// Rule for checking if a value is within a range.
+///
+/// # Example
+///
+/// ```
+/// use wary::{Wary, Validate};
+///
+/// #[derive(Wary)]
+/// struct Number {
+///   #[validate(range(min = 1, max = 10))]
+///   n: u32,
+///   #[validate(range(min = 1, exclusive_max = 10))]
+///   n_exclusive_max: i32,
+///   #[validate(range(exclusive_min = 1, max = 10))]
+///   n_exclusive_min: u8,
+/// }
+///
+/// let number = Number { n: 5, n_exclusive_max: 9, n_exclusive_min: 2 };
+/// assert!(number.validate(&()).is_ok());
+///
+/// let number = Number { n: 0, n_exclusive_max: 10, n_exclusive_min: 1 };
+/// assert!(number.validate(&()).is_err());
+/// ```
 #[must_use]
 pub struct RangeRule<Min, Max> {
 	min: Option<Min>,
@@ -27,7 +54,7 @@ pub struct RangeRule<Min, Max> {
 
 impl RangeRule<Unset, Unset> {
 	#[inline]
-	pub fn new() -> Self {
+	pub const fn new() -> Self {
 		RangeRule {
 			min: None,
 			max: None,
@@ -38,6 +65,7 @@ impl RangeRule<Unset, Unset> {
 }
 
 impl<Max> RangeRule<Unset, Max> {
+	/// Set the minimum value (inclusive).
 	#[inline]
 	pub fn min<Min>(self, min: Min) -> RangeRule<Min, Max> {
 		RangeRule {
@@ -48,6 +76,7 @@ impl<Max> RangeRule<Unset, Max> {
 		}
 	}
 
+	/// Set the minimum value (exclusive).
 	#[inline]
 	pub fn exclusive_min<Min>(self, min: Min) -> RangeRule<Min, Max> {
 		RangeRule {
@@ -60,6 +89,7 @@ impl<Max> RangeRule<Unset, Max> {
 }
 
 impl<Min> RangeRule<Min, Unset> {
+	/// Set the maximum value (inclusive).
 	#[inline]
 	pub fn max<Max>(self, max: Max) -> RangeRule<Min, Max> {
 		RangeRule {
@@ -70,6 +100,7 @@ impl<Min> RangeRule<Min, Unset> {
 		}
 	}
 
+	/// Set the maximum value (exclusive).
 	#[inline]
 	pub fn exclusive_max<Max>(self, max: Max) -> RangeRule<Min, Max> {
 		RangeRule {

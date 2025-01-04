@@ -1,3 +1,7 @@
+//! Rule for equality validation.
+//!
+//! See [`EqualsRule`] for more information.
+
 use core::fmt;
 
 use crate::{options::DebugDisplay, toolbox::rule::*};
@@ -15,6 +19,39 @@ pub enum Error {
 	ShouldNotEqual(String),
 }
 
+/// Rule for equality validation.
+///
+/// # Example
+///
+/// ```
+/// use wary::{Wary, Validate};
+///
+/// #[derive(Wary)]
+/// struct Person {
+///   #[validate(equals(other = "hello"))]
+///   name: String,
+///   #[validate(equals(not, other = "world"))]
+///   greeting: String,
+///   #[validate(equals(other = 42))]
+///   age: u8,
+/// }
+///
+/// let person = Person {
+///   name: "hello".into(),
+///   greeting: "hello".into(),
+///   age: 42,
+/// };
+///
+/// assert!(person.validate(&()).is_ok());
+///
+/// let person = Person {
+///   name: "world".into(),
+///   greeting: "world".into(),
+///   age: 41,
+/// };
+///
+/// assert!(person.validate(&()).is_err());
+/// ```
 #[must_use]
 pub struct EqualsRule<O, Mode> {
 	other: O,
@@ -23,7 +60,7 @@ pub struct EqualsRule<O, Mode> {
 
 impl EqualsRule<Unset, Unset> {
 	#[inline]
-	pub fn new() -> EqualsRule<Unset, Unset> {
+	pub const fn new() -> EqualsRule<Unset, Unset> {
 		EqualsRule {
 			other: Unset,
 			mode: PhantomData,
@@ -32,6 +69,7 @@ impl EqualsRule<Unset, Unset> {
 }
 
 impl<M> EqualsRule<Unset, M> {
+	/// Set the value to compare against.
 	#[inline]
 	pub fn other<O>(self, other: O) -> EqualsRule<O, M>
 	where
@@ -45,6 +83,7 @@ impl<M> EqualsRule<Unset, M> {
 }
 
 impl<O> EqualsRule<O, Unset> {
+	/// Inverts the rule.
 	#[inline]
 	pub fn not(self) -> EqualsRule<O, Not> {
 		EqualsRule {
@@ -57,13 +96,13 @@ impl<O> EqualsRule<O, Unset> {
 impl<I: ?Sized, O> crate::Rule<I> for EqualsRule<O, Unset>
 where
 	O: fmt::Debug,
-	for<'i> &'i I: PartialEq<O>,
+	for<'i> &'i I: PartialEq<&'i O>,
 {
 	type Context = ();
 
 	#[inline]
 	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
-		if item == self.other {
+		if item == &self.other {
 			Ok(())
 		} else {
 			Err(Error::ShouldEqual(DebugDisplay(&self.other).to_string()).into())
@@ -74,13 +113,13 @@ where
 impl<I: ?Sized, O> crate::Rule<I> for EqualsRule<O, Not>
 where
 	O: fmt::Debug + Copy + 'static,
-	for<'i> &'i I: PartialEq<O>,
+	for<'i> &'i I: PartialEq<&'i O>,
 {
 	type Context = ();
 
 	#[inline]
 	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
-		if item == self.other {
+		if item == &self.other {
 			Err(Error::ShouldNotEqual(DebugDisplay(&self.other).to_string()).into())
 		} else {
 			Ok(())
@@ -101,16 +140,20 @@ mod test {
 		struct Person<'name> {
 			#[validate(equals(other = "hello"))]
 			name: Cow<'name, str>,
+			#[validate(equals(other = 42))]
+			age: u8,
 		}
 
 		let person = Person {
 			name: Cow::Borrowed("hello"),
+			age: 42,
 		};
 
 		assert!(person.validate(&()).is_ok());
 
 		let person = Person {
 			name: Cow::Borrowed("world"),
+			age: 41,
 		};
 
 		assert!(person.validate(&()).is_err());

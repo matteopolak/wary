@@ -1,4 +1,10 @@
-use crate::toolbox::rule::*;
+//! Rule for prefix validation.
+//!
+//! See [`PrefixRule`] for more information.
+
+use core::fmt;
+
+use crate::{options::DebugDisplay, toolbox::rule::*};
 
 #[doc(hidden)]
 pub type Rule<P, Mode, Kind> = PrefixRule<P, Mode, Kind>;
@@ -15,11 +21,48 @@ pub enum Error {
 	#[error("expected string to not start with \"{0}\"")]
 	ShouldNotStartWith(&'static str),
 	#[error("expected slice to start with")]
-	ShouldStartWithSlice,
+	ShouldStartWithSlice(String),
 	#[error("expected slice to not start with")]
-	ShouldNotStartWithSlice,
+	ShouldNotStartWithSlice(String),
 }
 
+/// Rule for prefix validation.
+///
+/// # Example
+///
+/// ```
+/// use wary::{Wary, Validate};
+///
+/// #[derive(Wary)]
+/// struct Person {
+///   #[validate(prefix(str = "hello"))]
+///   name: String,
+///   #[validate(prefix(slice = [5, 6, 7, 8]))]
+///   numbers: Vec<u8>,
+///   #[validate(prefix(not, str = "hello"))]
+///   greeting: String,
+///   #[validate(prefix(not, slice = [1, 2, 3, 4]))]
+///   more_numbers: Vec<u8>,
+/// }
+///
+/// let person = Person {
+///   name: "hello world".into(),
+///   numbers: vec![5, 6, 7, 8, 9, 10],
+///   greeting: "world hello".into(),
+///   more_numbers: vec![5, 6, 7, 8, 9, 10],
+/// };
+///
+/// assert!(person.validate(&()).is_ok());
+///
+/// let person = Person {
+///   name: "world hello".into(),
+///   numbers: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+///   greeting: "hello world".into(),
+///   more_numbers: vec![1, 2, 3, 4, 5, 6, 7, 8],
+/// };
+///
+/// assert!(person.validate(&()).is_err());
+/// ```
 #[must_use]
 pub struct PrefixRule<P, Mode, Kind> {
 	prefix: P,
@@ -29,7 +72,7 @@ pub struct PrefixRule<P, Mode, Kind> {
 
 impl PrefixRule<Unset, Unset, Unset> {
 	#[inline]
-	pub fn new() -> Self {
+	pub const fn new() -> Self {
 		Self {
 			prefix: Unset,
 			mode: PhantomData,
@@ -39,6 +82,7 @@ impl PrefixRule<Unset, Unset, Unset> {
 }
 
 impl<M> PrefixRule<Unset, M, Unset> {
+	/// Ensure the input starts with the given string.
 	#[inline]
 	pub fn str(self, prefix: &'static str) -> PrefixRule<&'static str, M, Str> {
 		PrefixRule {
@@ -48,6 +92,7 @@ impl<M> PrefixRule<Unset, M, Unset> {
 		}
 	}
 
+	/// Ensure the input starts with the given slice.
 	#[inline]
 	pub fn slice<P>(self, prefix: P) -> PrefixRule<P, M, Slice> {
 		PrefixRule {
@@ -59,6 +104,7 @@ impl<M> PrefixRule<Unset, M, Unset> {
 }
 
 impl<P, K> PrefixRule<P, Unset, K> {
+	/// Inverts the rule.
 	#[inline]
 	pub fn not(self) -> PrefixRule<P, Not, K> {
 		PrefixRule {
@@ -72,7 +118,7 @@ impl<P, K> PrefixRule<P, Unset, K> {
 impl<I: ?Sized, P, O> crate::Rule<I> for PrefixRule<P, Unset, Slice>
 where
 	I: AsSlice<Item = O>,
-	P: AsSlice<Item = O>,
+	P: AsSlice<Item = O> + fmt::Debug,
 	O: PartialEq,
 {
 	type Context = ();
@@ -85,7 +131,7 @@ where
 		if inner.starts_with(prefix) {
 			Ok(())
 		} else {
-			Err(Error::ShouldStartWithSlice.into())
+			Err(Error::ShouldStartWithSlice(DebugDisplay(&self.prefix).to_string()).into())
 		}
 	}
 }
@@ -93,7 +139,7 @@ where
 impl<I: ?Sized, P, O> crate::Rule<I> for PrefixRule<P, Not, Slice>
 where
 	I: AsSlice<Item = O>,
-	P: AsSlice<Item = O>,
+	P: AsSlice<Item = O> + fmt::Debug,
 	O: PartialEq,
 {
 	type Context = ();
@@ -104,7 +150,7 @@ where
 		let prefix = self.prefix.as_slice();
 
 		if inner.starts_with(prefix) {
-			Err(Error::ShouldNotStartWithSlice.into())
+			Err(Error::ShouldNotStartWithSlice(DebugDisplay(&self.prefix).to_string()).into())
 		} else {
 			Ok(())
 		}
