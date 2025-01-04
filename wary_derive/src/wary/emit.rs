@@ -32,14 +32,13 @@ impl darling::FromMeta for Type {
 	}
 
 	fn from_meta(item: &syn::Meta) -> darling::Result<Self> {
-		let syn::Expr::Path(p) = &item.require_name_value()?
-			.value else {
+		let syn::Expr::Path(p) = &item.require_name_value()?.value else {
 			return Err(darling::Error::unknown_value("expected a type"));
 		};
 
 		Ok(Self(syn::Type::Path(syn::TypePath {
 			qself: p.qself.clone(),
-			path: p.path.clone()
+			path: p.path.clone(),
 		})))
 	}
 }
