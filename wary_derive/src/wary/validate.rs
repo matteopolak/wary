@@ -1,5 +1,5 @@
-use darling::{FromDeriveInput, FromField, FromMeta, FromVariant, ast};
-use quote::{ToTokens, format_ident, quote};
+use darling::{ast, FromDeriveInput, FromField, FromMeta, FromVariant};
+use quote::{format_ident, quote, ToTokens};
 
 use crate::{
 	attr,

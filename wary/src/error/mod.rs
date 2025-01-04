@@ -2,9 +2,9 @@ mod path;
 
 pub use path::Path;
 
-use crate::{options::rule};
 #[cfg(feature = "alloc")]
 use crate::alloc::{borrow::Cow, vec::Vec};
+use crate::options::rule;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
 #[non_exhaustive]
@@ -74,7 +74,10 @@ impl Error {
 
 	#[cfg(not(feature = "alloc"))]
 	pub fn with_message(code: &'static str, message: &'static str) -> Self {
-		Self::Custom { code, message: Some(message) }
+		Self::Custom {
+			code,
+			message: Some(message),
+		}
 	}
 }
 

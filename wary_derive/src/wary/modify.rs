@@ -1,4 +1,4 @@
-use darling::{FromDeriveInput, FromField, FromMeta, FromVariant, ast};
+use darling::{ast, FromDeriveInput, FromField, FromMeta, FromVariant};
 use quote::{format_ident, quote};
 
 use crate::util::{Args, Field, Map};

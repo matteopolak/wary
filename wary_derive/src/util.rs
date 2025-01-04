@@ -1,8 +1,8 @@
 use std::{collections::HashSet, ops};
 
-use darling::{FromMeta, ast};
+use darling::{ast, FromMeta};
 use proc_macro2::TokenStream;
-use quote::{ToTokens, format_ident, quote};
+use quote::{format_ident, quote, ToTokens};
 use syn::punctuated::Punctuated;
 
 use crate::wary::{modify::ModifyFieldWrapper, validate::ValidateFieldWrapper};
