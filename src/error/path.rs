@@ -1,5 +1,6 @@
 use core::fmt;
-use std::sync::Arc;
+
+use crate::alloc::{sync::Arc, vec::Vec};
 
 /// A non-empty singly-linked list with O(1) append and [`Clone`].
 #[derive(Clone, Default)]
@@ -145,6 +146,7 @@ impl Node {
 #[cfg(test)]
 mod test {
 	use super::*;
+	use crate::toolbox::test::*;
 
 	#[test]
 	fn test_path_append() {

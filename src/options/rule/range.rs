@@ -2,7 +2,7 @@
 //!
 //! See [`RangeRule`] for more information.
 
-use std::{borrow::Cow, cmp::Ordering};
+use core::cmp::Ordering;
 
 use crate::toolbox::rule::*;
 

@@ -128,11 +128,7 @@ impl ValidateField {
 								key,
 								Some(syn::parse_quote! {
 									{
-										static PAT: ::std::sync::LazyLock<#crate_name::options::rule::#path::Regex> =
-											::std::sync::LazyLock::new(|| {
-												#crate_name::options::rule::#path::Regex::new(#s).unwrap()
-											});
-
+										#crate_name::internal::init_regex!(static PAT = #s);
 										&PAT
 									}
 								}),

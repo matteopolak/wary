@@ -1,6 +1,6 @@
 mod path;
 
-use std::borrow::Cow;
+use crate::alloc::{borrow::Cow, vec::Vec};
 
 pub use path::Path;
 

@@ -1,3 +1,4 @@
+#![cfg_attr(not(any(test, feature = "std")), no_std)]
 #![warn(
 	clippy::pedantic,
 	clippy::print_stdout,
@@ -8,6 +9,14 @@
 #![cfg_attr(test, allow(non_upper_case_globals))]
 #![doc = include_str!("../README.md")]
 
+#[cfg(not(any(test, feature = "std")))]
+pub(crate) extern crate alloc;
+#[cfg(any(test, feature = "std"))]
+pub(crate) use std as alloc;
+
+use alloc::{string::String, vec::Vec};
+use core::option::Option;
+
 pub mod error;
 pub mod options;
 
@@ -16,15 +25,47 @@ pub use error::{Error, Report};
 #[cfg(feature = "derive")]
 pub use wary_derive::*;
 
+#[doc(hidden)]
+pub mod internal {
+	#[cfg(all(feature = "regex", feature = "std"))]
+	#[macro_export]
+	macro_rules! init_regex {
+		(static $id:ident = $s:expr) => {
+			#[allow(non_upper_case_globals)]
+			static $id: $crate::alloc::sync::LazyLock<$crate::options::rule::regex::Regex> =
+				$crate::alloc::sync::LazyLock::new(|| {
+					$crate::options::rule::regex::Regex::new($s).unwrap()
+				});
+		};
+	}
+
+	#[cfg(all(feature = "regex", not(feature = "std")))]
+	#[macro_export]
+	macro_rules! init_regex {
+		(static $id:ident = $s:expr) => {
+			#[allow(non_upper_case_globals)]
+			static $id: once_cell::sync::Lazy<$crate::options::rule::regex::Regex> =
+				once_cell::sync::Lazy::new(|| {
+					$crate::options::rule::regex::Regex::new($s).unwrap()
+				});
+		};
+	}
+
+	#[cfg(feature = "regex")]
+	pub use init_regex;
+}
+
 pub mod toolbox {
 	//! A collection of common imports for various use-cases.
 
+	#[allow(unused_imports)]
 	pub mod rule {
 		//! A collection of common imports for writing rules and modifiers.
 
 		pub use core::marker::PhantomData;
 
 		pub use crate::{options::Unset, AsRef, AsSlice, Error, Report};
+		pub(crate) use crate::alloc::{string::{String, ToString}, vec::Vec, vec, boxed::Box, borrow::Cow};
 		#[allow(missing_docs)]
 		pub type Result<T> = core::result::Result<T, Error>;
 	}

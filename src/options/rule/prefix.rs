@@ -197,8 +197,6 @@ where
 
 #[cfg(test)]
 mod test {
-	use std::borrow::Cow;
-
 	use crate::toolbox::test::*;
 
 	#[test]

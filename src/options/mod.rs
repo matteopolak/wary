@@ -37,8 +37,8 @@ pub mod rule {
 	#[cfg(feature = "regex")]
 	pub mod regex;
 	pub mod required;
-	pub mod semver;
 	#[cfg(feature = "semver")]
+	pub mod semver;
 	pub mod suffix;
 
 	pub mod dive {}
