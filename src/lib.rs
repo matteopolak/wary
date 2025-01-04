@@ -14,11 +14,10 @@ pub mod options;
 
 #[cfg(not(any(test, feature = "std")))]
 pub(crate) extern crate alloc;
-#[cfg(any(test, feature = "std"))]
-pub(crate) use std as alloc;
-
 use alloc::{string::String, vec::Vec};
 use core::option::Option;
+#[cfg(any(test, feature = "std"))]
+pub(crate) use std as alloc;
 
 use error::Path;
 pub use error::{Error, Report};
