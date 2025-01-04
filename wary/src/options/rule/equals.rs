@@ -4,10 +4,7 @@
 
 use core::fmt;
 
-use crate::{
-	options::{DebugDisplay, ItemSlice},
-	toolbox::rule::*,
-};
+use crate::{options::{DebugDisplay, ItemSlice}, toolbox::rule::*};
 
 #[doc(hidden)]
 pub type Rule<O, Mode> = EqualsRule<O, Mode>;

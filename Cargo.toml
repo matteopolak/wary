@@ -1,43 +1,11 @@
 [workspace]
-members = [".", "wary_derive", "examples/*"]
+members = ["wary", "wary_derive", "examples/*"]
+resolver = "2"
 
-[package]
-name = "wary"
-version = "0.0.2"
-edition = "2021"
-description = "A simple validation library"
+[workspace.package]
+rust-version = "1.78"
 license = "MIT OR Apache-2.0"
 authors = ["Matthew Polak <contact@matteopolak.com>"]
 repository = "https://github.com/matteopolak/wary"
-
-[package.metadata.docs.rs]
-all-features = true
-
-[dependencies]
-thiserror = { version = "2", default-features = false }
-
-email_address = { version = "0.2", default-features = false, optional = true }
-regex = { version = "1", optional = true, default-features = false }
-url = { version = "2", optional = true, default-features = false }
-wary_derive = { path = "wary_derive", version = "0.0.2", optional = true }
-semver = { version = "1", optional = true, default-features = false }
-unicode-segmentation = { version = "1", optional = true }
-serde = { version = "1", optional = true, default-features = false }
-once_cell = { version = "1", optional = true, default-features = false, features = ["critical-section"] }
-
-[features]
-default = ["std", "derive"]
-full = ["email", "url", "regex", "semver", "graphemes"]
-
-alloc = []
-std = ["alloc"]
-
-derive = ["dep:wary_derive"]
-# TODO: https://github.com/johnstonskj/rust-email_address/pull/36
-email = ["dep:email_address", "std"]
-url = ["dep:url"]
-# once_cell is needed when std is disabled
-regex = ["dep:regex", "dep:once_cell"]
-semver = ["dep:semver"]
-graphemes = ["dep:unicode-segmentation"]
-serde = ["dep:serde"]
+keywords = ["validation", "validate", "transform", "no_std", "no_alloc"]
+categories = ["no-std", "no-std::no-alloc"]
