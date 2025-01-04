@@ -148,7 +148,7 @@ impl ModifyField {
 		for (path, args) in self.custom.iter() {
 			tokens.extend(quote! {
 				#crate_name::Modifier::modify(
-					&#path::new() #args,
+					&modifier::#path::new() #args,
 					ctx,
 					#field
 				);

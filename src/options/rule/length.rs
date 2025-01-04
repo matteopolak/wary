@@ -279,40 +279,12 @@ pub struct CodeUnitsLength<'d, T: ?Sized>(&'d T);
 #[cfg(feature = "graphemes")]
 pub struct GraphemesLength<'d, T: ?Sized>(&'d T);
 
-impl<T> Length for &T
+impl<T> Length for T
 where
-	T: Length + ?Sized,
+	T: AsSlice,
 {
 	fn length(&self) -> usize {
-		(**self).length()
-	}
-}
-
-impl<const N: usize, T> Length for [T; N] {
-	#[inline]
-	fn length(&self) -> usize {
-		N
-	}
-}
-
-impl<T> Length for [T] {
-	#[inline]
-	fn length(&self) -> usize {
-		self.len()
-	}
-}
-
-impl<T> Length for Vec<T> {
-	#[inline]
-	fn length(&self) -> usize {
-		self.as_slice().length()
-	}
-}
-
-impl<T> Length for Box<[T]> {
-	#[inline]
-	fn length(&self) -> usize {
-		AsRef::as_ref(self).length()
+		self.as_slice().len()
 	}
 }
 

@@ -1,4 +1,4 @@
-use wary::{Modify, Validate, Wary};
+use wary::{Modify, Wary};
 
 #[derive(Wary, Debug)]
 struct Item {

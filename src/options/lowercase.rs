@@ -111,12 +111,15 @@ impl crate::Modifier<String> for Lowercase<Unset> {
 	}
 }
 
-impl crate::Modifier<String> for Lowercase<Ascii> {
+impl<I> crate::Modifier<I> for Lowercase<Ascii>
+where
+	I: AsMut<str>,
+{
 	type Context = ();
 
 	#[inline]
-	fn modify(&self, _ctx: &Self::Context, item: &mut String) {
-		item.make_ascii_lowercase();
+	fn modify(&self, _ctx: &Self::Context, item: &mut I) {
+		item.as_mut().make_ascii_lowercase();
 	}
 }
 

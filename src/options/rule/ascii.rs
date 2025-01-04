@@ -48,9 +48,9 @@ where
 	type Context = ();
 
 	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
-		let email = item.as_ref();
+		let string = item.as_ref();
 
-		if email.is_ascii() {
+		if string.is_ascii() {
 			Ok(())
 		} else {
 			Err(Error::Ascii)

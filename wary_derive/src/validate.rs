@@ -172,7 +172,7 @@ impl ValidateField {
 		for func in &self.func {
 			tokens.extend(quote! {
 				{
-					let result: Result<(), #crate_name::Error> = (#func)(ctx, #field);
+					let result: ::core::result::Result<(), #crate_name::Error> = (#func)(ctx, #field);
 					if let Err(e) = result {
 						__wary_report.push(__wary_parent.append(#field_path), e);
 					};
@@ -183,7 +183,7 @@ impl ValidateField {
 		for (path, args) in self.custom.iter() {
 			tokens.extend(quote! {
 				if let Err(e) = #crate_name::Rule::validate(
-					&#path::new() #args,
+					&rule::#path::new() #args,
 					ctx,
 					#field
 				) {
@@ -206,7 +206,7 @@ impl ValidateField {
 			let expand = or.to_token_stream(crate_name, field, ty, false);
 
 			tokens.extend(quote! {
-				let __wary_last: Result<(), #crate_name::Error> = (|| {
+				let __wary_last: ::core::result::Result<(), #crate_name::Error> = (|| {
 					#expand ;
 					Ok(())
 				})();
@@ -217,7 +217,7 @@ impl ValidateField {
 			let expand = or.to_token_stream(crate_name, field, ty, false);
 
 			tokens.extend(quote! {
-				let __wary_last: Result<(), #crate_name::Error> = __wary_last.or_else(|_| {
+				let __wary_last: ::core::result::Result<(), #crate_name::Error> = __wary_last.or_else(|_| {
 					#expand ;
 					Ok(())
 				});

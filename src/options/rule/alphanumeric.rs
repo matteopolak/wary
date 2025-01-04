@@ -5,7 +5,9 @@
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Rule = AlphanumericRule;
+pub type Rule<Mode> = AlphanumericRule<Mode>;
+
+pub struct Ascii;
 
 /// Rule for alphanumeric validation.
 ///
@@ -33,25 +35,52 @@ pub type Rule = AlphanumericRule;
 /// assert!(person.validate(&()).is_err());
 /// ```
 #[must_use]
-pub struct AlphanumericRule;
+pub struct AlphanumericRule<Mode> {
+	mode: PhantomData<Mode>,
+}
 
-impl AlphanumericRule {
+impl AlphanumericRule<Unset> {
 	#[inline]
 	pub const fn new() -> Self {
-		Self
+		Self { mode: PhantomData }
+	}
+
+	/// # Rule
+	///
+	/// Ensures that the input is entirely alphanumeric in ascii.
+	#[inline]
+	pub const fn ascii(self) -> AlphanumericRule<Ascii> {
+		AlphanumericRule { mode: PhantomData }
 	}
 }
 
-impl<I> crate::Rule<I> for AlphanumericRule
+impl<I> crate::Rule<I> for AlphanumericRule<Unset>
 where
 	I: AsRef<str>,
 {
 	type Context = ();
 
 	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
-		let email = item.as_ref();
+		let string = item.as_ref();
 
-		if email.chars().all(char::is_alphanumeric) {
+		if string.chars().all(char::is_alphanumeric) {
+			Ok(())
+		} else {
+			Err(Error::Alphanumeric)
+		}
+	}
+}
+
+impl<I> crate::Rule<I> for AlphanumericRule<Ascii>
+where
+	I: AsRef<str>,
+{
+	type Context = ();
+
+	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
+		let string = item.as_ref();
+
+		if string.chars().all(|ch| ch.is_ascii_alphanumeric()) {
 			Ok(())
 		} else {
 			Err(Error::Alphanumeric)

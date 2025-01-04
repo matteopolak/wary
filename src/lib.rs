@@ -12,15 +12,18 @@
 pub mod error;
 pub mod options;
 
+#[doc(hidden)]
 #[cfg(not(any(test, feature = "std")))]
-pub(crate) extern crate alloc;
+pub extern crate alloc;
 use alloc::{string::String, vec::Vec};
 use core::option::Option;
+#[doc(hidden)]
 #[cfg(any(test, feature = "std"))]
-pub(crate) use std as alloc;
+pub use std as alloc;
 
 use error::Path;
 pub use error::{Error, Report};
+pub use options::rule::{length::Length, range::Compare};
 #[cfg(feature = "derive")]
 pub use wary_derive::*;
 
@@ -68,7 +71,7 @@ pub mod toolbox {
 			vec,
 			vec::Vec,
 		};
-		pub use crate::{options::Unset, AsRef, AsSlice, Error, Report};
+		pub use crate::{options::Unset, AsMut, AsRef, AsSlice, Error, Report};
 		#[allow(missing_docs)]
 		pub type Result<T> = core::result::Result<T, Error>;
 	}
@@ -83,21 +86,21 @@ pub mod toolbox {
 ///
 /// This is a simple wrapper around types that are [`Validate`] and [`Modify`],
 /// first validating the type then modifying if validation returned no errors.
-pub trait Wary: Validate + Modify {
+pub trait Wary<C>: Validate<Context = C> + Modify<Context = C> {
 	/// Validates with [`Validate::validate`], then (if successful) modifies with
 	/// [`Modify::modify`].
 	///
 	/// # Errors
 	///
 	/// Forwards any errors from [`Validate::validate`].
-	fn wary(&mut self, ctx: &Self::Context) -> Result<(), Report> {
+	fn wary(&mut self, ctx: &C) -> Result<(), Report> {
 		self.validate(ctx)?;
 		self.modify(ctx);
 		Ok(())
 	}
 }
 
-impl<T> Wary for T where T: Validate + Modify {}
+impl<T, C> Wary<C> for T where T: Validate<Context = C> + Modify<Context = C> {}
 
 /// Trait for modifying other data.
 pub trait Modifier<I: ?Sized> {
@@ -109,7 +112,10 @@ pub trait Modifier<I: ?Sized> {
 }
 
 /// Trait for modifying itself.
-pub trait Modify: Validate {
+pub trait Modify {
+	/// Additional context required to modify itself.
+	type Context;
+
 	/// Modify itself.
 	fn modify(&mut self, ctx: &Self::Context);
 }
@@ -196,6 +202,24 @@ impl<To: ?Sized, From: core::convert::AsRef<To> + ?Sized> AsRef<To> for From {
 	}
 }
 
+/// Trait for cheap mutable-to-mutable reference conversion.
+///
+/// This trait contains a blanket implementation for all
+/// [`AsMut`](std::convert::AsMut) types using the standard library's trait of
+/// the same name. Additional implementations were created for better ergonomics
+/// with strings and other data.
+pub trait AsMut<T: ?Sized> {
+	/// Converts this type into a mutable reference of the input type.
+	fn as_mut(&mut self) -> &mut T;
+}
+
+impl<To: ?Sized, From: core::convert::AsMut<To> + ?Sized> AsMut<To> for From {
+	#[inline]
+	fn as_mut(&mut self) -> &mut To {
+		self.as_mut()
+	}
+}
+
 /// Trait for cheap reference-to-slice conversion.
 ///
 /// This trait is used for accepting slices of data like [`Vec`],
@@ -209,7 +233,7 @@ pub trait AsSlice {
 	fn as_slice(&self) -> &[Self::Item];
 }
 
-impl<T> AsSlice for &T
+impl<T: ?Sized> AsSlice for &T
 where
 	T: AsSlice,
 {
@@ -266,15 +290,6 @@ impl<const N: usize, T> AsSlice for [T; N] {
 	#[inline]
 	fn as_slice(&self) -> &[Self::Item] {
 		self
-	}
-}
-
-impl AsSlice for &str {
-	type Item = u8;
-
-	#[inline]
-	fn as_slice(&self) -> &[Self::Item] {
-		self.as_bytes()
 	}
 }
 

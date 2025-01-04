@@ -1,6 +1,18 @@
-//! Rule for email validation.
+//! Rule for email address validation.
+//!
+//! It is recommended to instead parse directly into an
+//! [`EmailAddress`][email] if you need to parse it afterwards anyway. Other
+//! validators that accept string-like values such as [`ascii`][ascii],
+//! [`length`][length], [`contains`][contains], etc. can still be used with
+//! an [`EmailAddress`][email]!
 //!
 //! See [`EmailRule`] for more information.
+//!
+//! [ascii]: crate::rule::ascii
+//! [contains]: crate::rule::contains
+//! [length]: crate::rule::length
+//!
+//! [email]: email_address::EmailAddress
 
 use core::str::FromStr;
 

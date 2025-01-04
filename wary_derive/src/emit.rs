@@ -168,6 +168,8 @@ impl EmitEnum<'_> {
 
 			#[allow(warnings)]
 			impl #imp #crate_name::Modify for #ident #ty #wher {
+				type Context = #context;
+
 				fn modify(&mut self, ctx: &Self::Context) {
 					match self {
 						#(
@@ -239,6 +241,8 @@ impl EmitStruct<'_> {
 
 			#[allow(warnings)]
 			impl #imp #crate_name::Modify for #ident #ty #wher {
+				type Context = #context;
+
 				fn modify(&mut self, ctx: &Self::Context) {
 					let Self { #destruct } = self;
 

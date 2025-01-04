@@ -111,12 +111,15 @@ impl crate::Modifier<String> for Uppercase<Unset> {
 	}
 }
 
-impl crate::Modifier<String> for Uppercase<Ascii> {
+impl<I> crate::Modifier<I> for Uppercase<Ascii>
+where
+	I: AsMut<str>,
+{
 	type Context = ();
 
 	#[inline]
-	fn modify(&self, _ctx: &Self::Context, item: &mut String) {
-		item.make_ascii_uppercase();
+	fn modify(&self, _ctx: &Self::Context, item: &mut I) {
+		item.as_mut().make_ascii_uppercase();
 	}
 }
 

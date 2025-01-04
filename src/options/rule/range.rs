@@ -189,7 +189,14 @@ impl Compare<&&str> for &'_ Cow<'_, str> {
 	}
 }
 
-impl Compare<&&str> for &'_ String {
+impl Compare<&str> for String {
+	#[inline]
+	fn compare(&self, other: &&str) -> Option<Ordering> {
+		self.as_str().partial_cmp(other)
+	}
+}
+
+impl Compare<&&str> for String {
 	#[inline]
 	fn compare(&self, other: &&&str) -> Option<Ordering> {
 		self.as_str().partial_cmp(other)
