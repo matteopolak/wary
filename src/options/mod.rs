@@ -58,6 +58,7 @@ impl<T> DebugDisplay<T>
 where
 	T: fmt::Debug,
 {
+	#[allow(clippy::inherent_to_string)]
 	#[cfg(feature = "alloc")]
 	fn to_string(&self) -> String {
 		format!("{:?}", self.0)
