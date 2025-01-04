@@ -3,6 +3,12 @@ name = "wary_derive"
 version = "0.0.3"
 description = "Procedural macros for wary"
 edition = "2021"
+rust-version = "1.78"
+license = "MIT OR Apache-2.0"
+authors = ["Matthew Polak <contact@matteopolak.com>"]
+repository = "https://github.com/matteopolak/wary"
+keywords = ["validation", "validate", "transform", "no_std", "no_alloc"]
+categories = ["no-std", "no-std::no-alloc"]
 
 [lib]
 proc-macro = true
