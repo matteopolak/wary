@@ -1,10 +1,11 @@
 mod path;
 
-use crate::alloc::{borrow::Cow, vec::Vec};
-
 pub use path::Path;
 
-use crate::options::rule;
+use crate::{
+	alloc::{borrow::Cow, vec::Vec},
+	options::rule,
+};
 
 #[derive(Debug, thiserror::Error, PartialEq)]
 #[non_exhaustive]
