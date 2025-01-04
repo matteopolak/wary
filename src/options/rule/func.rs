@@ -4,6 +4,7 @@ mod test {
 
 	#[test]
 	fn test_func_rule() {
+		#[allow(clippy::trivially_copy_pass_by_ref)]
 		fn check(_ctx: &(), name: &str) -> Result<()> {
 			if name.len() > 5 {
 				Ok(())
