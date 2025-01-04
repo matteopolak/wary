@@ -10,6 +10,9 @@ license = "MIT OR Apache-2.0"
 authors = ["Matthew Polak <contact@matteopolak.com>"]
 repository = "https://github.com/matteopolak/wary"
 
+[package.metadata.docs.rs]
+all-features = true
+
 [dependencies]
 thiserror = { version = "2", default-features = false }
 
