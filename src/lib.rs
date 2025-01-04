@@ -9,15 +9,16 @@
 #![cfg_attr(test, allow(non_upper_case_globals))]
 #![doc = include_str!("../README.md")]
 
+pub mod error;
+pub mod options;
+
 #[cfg(not(any(test, feature = "std")))]
 pub(crate) extern crate alloc;
-use alloc::{string::String, vec::Vec};
-use core::option::Option;
 #[cfg(any(test, feature = "std"))]
 pub(crate) use std as alloc;
 
-pub mod error;
-pub mod options;
+use alloc::{string::String, vec::Vec};
+use core::option::Option;
 
 use error::Path;
 pub use error::{Error, Report};
