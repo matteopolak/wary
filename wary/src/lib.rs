@@ -269,10 +269,7 @@ impl<T> AsSlice for Option<T> {
 
 	#[inline]
 	fn as_slice(&self) -> &[Self::Item] {
-		match self {
-			Some(inner) => core::slice::from_ref(inner),
-			None => &[],
-		}
+		self.as_slice()
 	}
 }
 
@@ -344,10 +341,7 @@ where
 impl<T> AsMutSlice for Option<T> {
 	#[inline]
 	fn as_mut_slice(&mut self) -> &mut [Self::Item] {
-		match self {
-			Some(inner) => core::slice::from_mut(inner),
-			None => &mut [],
-		}
+		self.as_mut_slice()
 	}
 }
 
