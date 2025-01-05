@@ -20,7 +20,7 @@ pub enum Error {
 
 impl Error {
 	#[must_use]
-	pub fn code(&self) -> &'static str {
+	pub(crate) fn code(&self) -> &'static str {
 		match self {
 			Self::NoMatch { .. } => "no_match",
 		}
@@ -28,14 +28,15 @@ impl Error {
 
 	#[cfg(feature = "alloc")]
 	#[must_use]
-	pub fn message(&self) -> Cow<'static, str> {
+	pub(crate) fn message(&self) -> Cow<'static, str> {
 		match self {
-			Self::NoMatch { pattern } => format!("value does not match pattern {pattern}").into(),
+			Self::NoMatch { pattern } => format!("value does not match pattern {pattern}"),
 		}
+		.into()
 	}
 
 	#[cfg(not(feature = "alloc"))]
-	pub fn message(&self) -> &'static str {
+	pub(crate) fn message(&self) -> &'static str {
 		match self {
 			Self::NoMatch { .. } => "value does not match pattern",
 		}

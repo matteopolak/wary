@@ -17,7 +17,7 @@ pub enum Error {
 
 impl Error {
 	#[must_use]
-	pub fn code(&self) -> &'static str {
+	pub(crate) fn code(&self) -> &'static str {
 		match self {
 			Self::Alphanumeric => "alphanumeric",
 		}
@@ -25,7 +25,7 @@ impl Error {
 
 	#[cfg(feature = "alloc")]
 	#[must_use]
-	pub fn message(&self) -> Cow<'static, str> {
+	pub(crate) fn message(&self) -> Cow<'static, str> {
 		match self {
 			Self::Alphanumeric => "value should be alphanumeric",
 		}
@@ -33,7 +33,7 @@ impl Error {
 	}
 
 	#[cfg(not(feature = "alloc"))]
-	pub fn message(&self) -> &'static str {
+	pub(crate) fn message(&self) -> &'static str {
 		match self {
 			Self::Alphanumeric => "value should be alphanumeric",
 		}

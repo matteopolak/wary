@@ -25,7 +25,7 @@ mod test {
 	}
 
 	#[test]
-	fn test_custom_rule() {
+	fn test_custom_modifier() {
 		#[derive(Wary)]
 		#[wary(crate = "crate")]
 		struct Person {

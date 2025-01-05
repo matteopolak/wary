@@ -26,7 +26,7 @@ pub enum Error {
 
 impl Error {
 	#[must_use]
-	pub fn code(&self) -> &'static str {
+	pub(crate) fn code(&self) -> &'static str {
 		match self {
 			Self::ShouldEqual { .. } => "should_equal",
 			Self::ShouldNotEqual { .. } => "should_not_equal",
@@ -35,7 +35,7 @@ impl Error {
 
 	#[cfg(feature = "alloc")]
 	#[must_use]
-	pub fn message(&self) -> Cow<'static, str> {
+	pub(crate) fn message(&self) -> Cow<'static, str> {
 		match self {
 			Self::ShouldEqual { value } => format!("expected to equal {value:?}"),
 			Self::ShouldNotEqual { value } => format!("expected to not equal {value:?}"),
@@ -44,7 +44,7 @@ impl Error {
 	}
 
 	#[cfg(not(feature = "alloc"))]
-	pub fn message(&self) -> &'static str {
+	pub(crate) fn message(&self) -> &'static str {
 		match self {
 			Self::ShouldEqual { .. } => "expected to equal",
 			Self::ShouldNotEqual { .. } => "expected to not equal",

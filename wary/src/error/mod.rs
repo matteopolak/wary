@@ -57,6 +57,7 @@ pub enum Error {
 	},
 }
 
+#[allow(dead_code)]
 impl Error {
 	#[must_use]
 	pub fn new(code: &'static str) -> Self {
@@ -212,7 +213,7 @@ mod ser {
 		path: &'d Path,
 		code: &'static str,
 		message: Option<Cow<'d, str>>,
-		data: &'d Error,
+		detail: &'d Error,
 	}
 
 	#[cfg(feature = "alloc")]
@@ -230,7 +231,7 @@ mod ser {
 					path,
 					code: error.code(),
 					message: error.message(),
-					data: error,
+					detail: error,
 				};
 
 				seq.serialize_element(&detail)?;
@@ -256,7 +257,7 @@ mod ser {
 						path,
 						code: error.code(),
 						message: error.message(),
-						data: error,
+						detail: error,
 					};
 
 					seq.serialize_element(&detail)?;

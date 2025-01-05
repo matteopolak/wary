@@ -31,7 +31,7 @@ pub enum Error {
 
 impl Error {
 	#[must_use]
-	pub fn code(&self) -> &'static str {
+	pub(crate) fn code(&self) -> &'static str {
 		match self {
 			Self::ShouldContain { .. } => "should_contain",
 			Self::ShouldNotContain { .. } => "should_not_contain",
@@ -42,7 +42,7 @@ impl Error {
 
 	#[cfg(feature = "alloc")]
 	#[must_use]
-	pub fn message(&self) -> Cow<'static, str> {
+	pub(crate) fn message(&self) -> Cow<'static, str> {
 		match self {
 			Self::ShouldContain { value } => format!("expected to contain {value}"),
 			Self::ShouldNotContain { position, value } => {
@@ -57,7 +57,7 @@ impl Error {
 	}
 
 	#[cfg(not(feature = "alloc"))]
-	pub fn message(&self) -> &'static str {
+	pub(crate) fn message(&self) -> &'static str {
 		match self {
 			Self::ShouldContain { .. } => "expected to contain",
 			Self::ShouldNotContain { .. } => "found unexpected value",

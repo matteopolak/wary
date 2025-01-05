@@ -17,7 +17,7 @@ pub enum Error {
 
 impl Error {
 	#[must_use]
-	pub fn code(&self) -> &'static str {
+	pub(crate) fn code(&self) -> &'static str {
 		match self {
 			Self::Semver => "semver",
 		}
@@ -25,14 +25,15 @@ impl Error {
 
 	#[cfg(feature = "alloc")]
 	#[must_use]
-	pub fn message(&self) -> Cow<'static, str> {
+	pub(crate) fn message(&self) -> Cow<'static, str> {
 		match self {
-			Self::Semver => "expected semantic version".into(),
+			Self::Semver => "expected semantic version",
 		}
+		.into()
 	}
 
 	#[cfg(not(feature = "alloc"))]
-	pub fn message(&self) -> &'static str {
+	pub(crate) fn message(&self) -> &'static str {
 		match self {
 			Self::Semver => "expected semantic version",
 		}

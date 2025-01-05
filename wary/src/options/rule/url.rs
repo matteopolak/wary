@@ -37,7 +37,7 @@ pub enum Error {
 
 impl Error {
 	#[must_use]
-	pub fn code(&self) -> &'static str {
+	pub(crate) fn code(&self) -> &'static str {
 		match self {
 			Self::EmptyHost => "empty_host",
 			Self::IdnaError => "idna_error",
@@ -55,24 +55,25 @@ impl Error {
 
 	#[cfg(feature = "alloc")]
 	#[must_use]
-	pub fn message(&self) -> Cow<'static, str> {
+	pub(crate) fn message(&self) -> Cow<'static, str> {
 		match self {
-			Self::EmptyHost => "empty host".into(),
-			Self::IdnaError => "invalid international domain name".into(),
-			Self::InvalidPort => "invalid port number".into(),
-			Self::InvalidIpv4Address => "invalid IPv4 address".into(),
-			Self::InvalidIpv6Address => "invalid IPv6 address".into(),
-			Self::InvalidDomainCharacter => "invalid domain character".into(),
-			Self::RelativeUrlWithoutBase => "relative URL without a base".into(),
-			Self::RelativeUrlWithCannotBeABaseBase => "relative URL with a cannot-be-a-base base".into(),
-			Self::SetHostOnCannotBeABaseUrl => "a cannot-be-a-base URL doesn’t have a host to set".into(),
-			Self::Overflow => "URLs more than 4 GB are not supported".into(),
-			Self::Other => "unknown URL error".into(),
+			Self::EmptyHost => "empty host",
+			Self::IdnaError => "invalid international domain name",
+			Self::InvalidPort => "invalid port number",
+			Self::InvalidIpv4Address => "invalid IPv4 address",
+			Self::InvalidIpv6Address => "invalid IPv6 address",
+			Self::InvalidDomainCharacter => "invalid domain character",
+			Self::RelativeUrlWithoutBase => "relative URL without a base",
+			Self::RelativeUrlWithCannotBeABaseBase => "relative URL with a cannot-be-a-base base",
+			Self::SetHostOnCannotBeABaseUrl => "a cannot-be-a-base URL doesn’t have a host to set",
+			Self::Overflow => "URLs more than 4 GB are not supported",
+			Self::Other => "unknown URL error",
 		}
+		.into()
 	}
 
 	#[cfg(not(feature = "alloc"))]
-	pub fn message(&self) -> &'static str {
+	pub(crate) fn message(&self) -> &'static str {
 		match self {
 			Self::EmptyHost => "empty host",
 			Self::IdnaError => "invalid international domain name",

@@ -23,7 +23,7 @@ pub enum Error {
 
 impl Error {
 	#[must_use]
-	pub fn code(&self) -> &'static str {
+	pub(crate) fn code(&self) -> &'static str {
 		match self {
 			Self::InvalidIp => "invalid_ip",
 			Self::InvalidIpv4 => "invalid_ipv4",
@@ -33,7 +33,7 @@ impl Error {
 
 	#[cfg(feature = "alloc")]
 	#[must_use]
-	pub fn message(&self) -> Cow<'static, str> {
+	pub(crate) fn message(&self) -> Cow<'static, str> {
 		match self {
 			Self::InvalidIp => "invalid IP address",
 			Self::InvalidIpv4 => "invalid IPv4 address",
@@ -43,7 +43,7 @@ impl Error {
 	}
 
 	#[cfg(not(feature = "alloc"))]
-	pub fn message(&self) -> &'static str {
+	pub(crate) fn message(&self) -> &'static str {
 		match self {
 			Self::InvalidIp => "invalid IP address",
 			Self::InvalidIpv4 => "invalid IPv4 address",

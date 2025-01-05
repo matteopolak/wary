@@ -19,7 +19,9 @@ mod test {
 		}
 
 		let mut name = Name {
-			item: Item { name: "Hello".into() },
+			item: Item {
+				name: "Hello".into(),
+			},
 		};
 
 		name.modify(&());

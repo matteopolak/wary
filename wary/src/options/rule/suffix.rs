@@ -28,7 +28,7 @@ pub enum Error {
 
 impl Error {
 	#[must_use]
-	pub fn code(&self) -> &'static str {
+	pub(crate) fn code(&self) -> &'static str {
 		match self {
 			Self::ShouldEndWith { .. } => "should_end_with",
 			Self::ShouldNotEndWith { .. } => "should_not_end_with",
@@ -39,7 +39,7 @@ impl Error {
 
 	#[cfg(feature = "alloc")]
 	#[must_use]
-	pub fn message(&self) -> Cow<'static, str> {
+	pub(crate) fn message(&self) -> Cow<'static, str> {
 		match self {
 			Self::ShouldEndWith { value } => format!("expected to end with {value}"),
 			Self::ShouldNotEndWith { value } => format!("expected to not end with {value}"),
@@ -50,7 +50,7 @@ impl Error {
 	}
 
 	#[cfg(not(feature = "alloc"))]
-	pub fn message(&self) -> &'static str {
+	pub(crate) fn message(&self) -> &'static str {
 		match self {
 			Self::ShouldEndWith { .. } => "expected to end with",
 			Self::ShouldNotEndWith { .. } => "expected to not end with",
