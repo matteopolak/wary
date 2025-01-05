@@ -243,9 +243,9 @@ impl Report {
 	}
 
 	pub fn extend(&mut self, other: Self) {
-		for i in 0..other.len.min(other.errors.len()) {
+		for error in other.errors {
 			if self.len < self.errors.len() {
-				self.errors[self.len] = other.errors[i];
+				self.errors[self.len] = error;
 			}
 
 			self.len += 1;
