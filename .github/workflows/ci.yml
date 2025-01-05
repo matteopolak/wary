@@ -44,6 +44,6 @@ jobs:
       - name: cargo clippy
         run: cargo clippy --all-targets -- -D warnings
       - name: check no_alloc
-        run: cargo check --target x86_64-unknown-none --no-default-features
+        run: cargo check -p wary --target x86_64-unknown-none --no-default-features
       - name: check no_std
-        run: cargo check --target x86_64-unknown-none --no-default-features --features alloc
+        run: cargo check -p wary --target x86_64-unknown-none --no-default-features --features alloc
