@@ -8,6 +8,8 @@ use crate::toolbox::rule::*;
 pub type Rule<Mode> = RequiredRule<Mode>;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
 pub enum Error {
 	#[error("value should be empty")]
 	ShouldBeEmpty,

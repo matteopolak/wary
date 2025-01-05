@@ -13,15 +13,20 @@ use crate::{
 pub type Rule<C, Mode, Kind> = ContainsRule<C, Mode, Kind>;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
 pub enum Error {
-	#[error("expected string to contain \"{0}\"")]
-	ShouldContain(&'static str),
-	#[error("found unexpected string \"{item}\" at position {position}")]
-	ShouldNotContain { position: usize, item: &'static str },
+	#[error("expected string to contain \"{value}\"")]
+	ShouldContain { value: &'static str },
+	#[error("found unexpected string \"{value}\" at position {position}")]
+	ShouldNotContain {
+		position: usize,
+		value: &'static str,
+	},
 	#[error("expected slice to contain")]
-	ShouldContainSlice(ItemSlice),
-	#[error("found unexpected item at position {position}")]
-	ShouldNotContainSlice { position: usize, item: ItemSlice },
+	ShouldContainSlice { value: ItemSlice },
+	#[error("found unexpected value at position {position}")]
+	ShouldNotContainSlice { position: usize, value: ItemSlice },
 }
 
 pub struct InOrder;
@@ -182,7 +187,12 @@ where
 			}
 		}
 
-		Err(Error::ShouldContainSlice(DebugDisplay(&self.contains).to_string()).into())
+		Err(
+			Error::ShouldContainSlice {
+				value: DebugDisplay(&self.contains).to_string(),
+			}
+			.into(),
+		)
 	}
 }
 
@@ -210,7 +220,7 @@ where
 				return Err(
 					Error::ShouldNotContainSlice {
 						position: idx,
-						item: DebugDisplay(&self.contains).to_string(),
+						value: DebugDisplay(&self.contains).to_string(),
 					}
 					.into(),
 				);
@@ -237,7 +247,12 @@ where
 
 		for item in contains {
 			if !inner.contains(item) {
-				return Err(Error::ShouldContainSlice(DebugDisplay(&self.contains).to_string()).into());
+				return Err(
+					Error::ShouldContainSlice {
+						value: DebugDisplay(&self.contains).to_string(),
+					}
+					.into(),
+				);
 			}
 		}
 
@@ -262,7 +277,7 @@ where
 				return Err(
 					Error::ShouldNotContainSlice {
 						position: idx,
-						item: DebugDisplay(&self.contains).to_string(),
+						value: DebugDisplay(&self.contains).to_string(),
 					}
 					.into(),
 				);
@@ -286,7 +301,12 @@ where
 		if inner.contains(contains) {
 			Ok(())
 		} else {
-			Err(Error::ShouldContain(self.contains).into())
+			Err(
+				Error::ShouldContain {
+					value: self.contains,
+				}
+				.into(),
+			)
 		}
 	}
 }
@@ -305,7 +325,7 @@ where
 			Err(
 				Error::ShouldNotContain {
 					position: idx,
-					item: self.contains,
+					value: self.contains,
 				}
 				.into(),
 			)

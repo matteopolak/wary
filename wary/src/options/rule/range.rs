@@ -10,6 +10,8 @@ use crate::toolbox::rule::*;
 pub type Rule<Min, Max> = RangeRule<Min, Max>;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
 pub enum Error {
 	#[error("Value is too small")]
 	TooSmall,
@@ -181,30 +183,6 @@ impl Compare<Cow<'_, str>> for str {
 	#[inline]
 	fn compare(&self, other: &Cow<'_, str>) -> Option<Ordering> {
 		self.partial_cmp(AsRef::as_ref(other))
-	}
-}
-
-#[cfg(feature = "alloc")]
-impl Compare<&&str> for &'_ Cow<'_, str> {
-	#[inline]
-	fn compare(&self, other: &&&str) -> Option<Ordering> {
-		AsRef::as_ref(self).partial_cmp(other)
-	}
-}
-
-#[cfg(feature = "alloc")]
-impl Compare<&str> for String {
-	#[inline]
-	fn compare(&self, other: &&str) -> Option<Ordering> {
-		self.as_str().partial_cmp(other)
-	}
-}
-
-#[cfg(feature = "alloc")]
-impl Compare<&&str> for String {
-	#[inline]
-	fn compare(&self, other: &&&str) -> Option<Ordering> {
-		self.as_str().partial_cmp(other)
 	}
 }
 

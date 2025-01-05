@@ -18,15 +18,17 @@ pub struct Slice;
 pub struct Not;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
 pub enum Error {
-	#[error("expected string to start with \"{0}\"")]
-	ShouldStartWith(&'static str),
-	#[error("expected string to not start with \"{0}\"")]
-	ShouldNotStartWith(&'static str),
+	#[error("expected string to start with \"{value}\"")]
+	ShouldStartWith { value: &'static str },
+	#[error("expected string to not start with \"{value}\"")]
+	ShouldNotStartWith { value: &'static str },
 	#[error("expected slice to start with")]
-	ShouldStartWithSlice(ItemSlice),
+	ShouldStartWithSlice { value: ItemSlice },
 	#[error("expected slice to not start with")]
-	ShouldNotStartWithSlice(ItemSlice),
+	ShouldNotStartWithSlice { value: ItemSlice },
 }
 
 /// Rule for prefix validation.
@@ -134,7 +136,12 @@ where
 		if inner.starts_with(prefix) {
 			Ok(())
 		} else {
-			Err(Error::ShouldStartWithSlice(DebugDisplay(&self.prefix).to_string()).into())
+			Err(
+				Error::ShouldStartWithSlice {
+					value: DebugDisplay(&self.prefix).to_string(),
+				}
+				.into(),
+			)
 		}
 	}
 }
@@ -153,7 +160,12 @@ where
 		let prefix = self.prefix.as_slice();
 
 		if inner.starts_with(prefix) {
-			Err(Error::ShouldNotStartWithSlice(DebugDisplay(&self.prefix).to_string()).into())
+			Err(
+				Error::ShouldNotStartWithSlice {
+					value: DebugDisplay(&self.prefix).to_string(),
+				}
+				.into(),
+			)
 		} else {
 			Ok(())
 		}
@@ -174,7 +186,7 @@ where
 		if inner.starts_with(prefix) {
 			Ok(())
 		} else {
-			Err(Error::ShouldStartWith(self.prefix).into())
+			Err(Error::ShouldStartWith { value: self.prefix }.into())
 		}
 	}
 }
@@ -191,7 +203,7 @@ where
 		let prefix = self.prefix;
 
 		if inner.starts_with(prefix) {
-			Err(Error::ShouldNotStartWith(self.prefix).into())
+			Err(Error::ShouldNotStartWith { value: self.prefix }.into())
 		} else {
 			Ok(())
 		}

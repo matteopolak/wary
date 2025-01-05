@@ -15,11 +15,13 @@ pub type Rule<O, Mode> = EqualsRule<O, Mode>;
 pub struct Not;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
 pub enum Error {
 	#[error("expected to equal")]
-	ShouldEqual(ItemSlice),
+	ShouldEqual { value: ItemSlice },
 	#[error("expected to not equal")]
-	ShouldNotEqual(ItemSlice),
+	ShouldNotEqual { value: ItemSlice },
 }
 
 /// Rule for equality validation.
@@ -108,7 +110,12 @@ where
 		if item == &self.other {
 			Ok(())
 		} else {
-			Err(Error::ShouldEqual(DebugDisplay(&self.other).to_string()).into())
+			Err(
+				Error::ShouldEqual {
+					value: DebugDisplay(&self.other).to_string(),
+				}
+				.into(),
+			)
 		}
 	}
 }
@@ -123,7 +130,12 @@ where
 	#[inline]
 	fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<()> {
 		if item == &self.other {
-			Err(Error::ShouldNotEqual(DebugDisplay(&self.other).to_string()).into())
+			Err(
+				Error::ShouldNotEqual {
+					value: DebugDisplay(&self.other).to_string(),
+				}
+				.into(),
+			)
 		} else {
 			Ok(())
 		}

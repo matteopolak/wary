@@ -8,6 +8,8 @@ use crate::toolbox::rule::*;
 pub type Rule<Mode> = LengthRule<Mode>;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
 pub enum Error {
 	#[error("Expected length of at least {min}, found {actual}")]
 	TooShort {

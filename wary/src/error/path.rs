@@ -12,7 +12,6 @@ type ArcNode = ();
 
 /// A non-empty singly-linked list with O(1) append and [`Clone`].
 #[derive(Clone, Default)]
-#[cfg_attr(not(feature = "alloc"), derive(Debug))]
 pub enum Path {
 	#[default]
 	Empty,
@@ -36,6 +35,13 @@ impl fmt::Debug for Path {
 		}
 
 		Ok(())
+	}
+}
+
+#[cfg(not(feature = "alloc"))]
+impl fmt::Debug for Path {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "<unknown path>")
 	}
 }
 
@@ -137,7 +143,34 @@ impl<'l> IntoIterator for &'l Path {
 	}
 }
 
+#[cfg(all(feature = "serde", feature = "alloc"))]
+impl serde::Serialize for Path {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+		use serde::ser::SerializeSeq;
+
+		let elems = self.clone().collect();
+		let mut seq = serializer.serialize_seq(Some(elems.len()))?;
+
+		for elem in elems {
+			seq.serialize_element(&elem)?;
+		}
+
+		seq.end()
+	}
+}
+
+#[cfg(all(feature = "serde", not(feature = "alloc")))]
+impl serde::Serialize for Path {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+		use serde::ser::SerializeSeq;
+
+		serializer.serialize_seq(Some(0))?.end()
+	}
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(untagged))]
 pub enum Elem {
 	Key(&'static str),
 	Index(usize),

@@ -7,6 +7,8 @@ use crate::alloc::{borrow::Cow, vec::Vec};
 use crate::options::rule;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(untagged))]
 #[non_exhaustive]
 pub enum Error {
 	#[error("value is not alphanumeric")]
@@ -86,7 +88,9 @@ pub struct Report {
 	#[cfg(feature = "alloc")]
 	errors: Vec<(Path, Error)>,
 	#[cfg(not(feature = "alloc"))]
-	is_empty: bool,
+	errors: [Option<(Path, Error)>; 1],
+	#[cfg(not(feature = "alloc"))]
+	len: usize,
 }
 
 #[cfg(feature = "alloc")]
@@ -103,22 +107,45 @@ impl Report {
 
 #[cfg(not(feature = "alloc"))]
 impl Report {
-	pub fn push(&mut self, _path: Path, _error: Error) {
-		self.is_empty = false;
+	pub fn push(&mut self, path: Path, error: Error) {
+		if self.len == self.errors.len() {
+			return;
+		}
+
+		self.errors[self.len] = Some((path, error));
+		self.len += 1;
 	}
 
 	#[must_use]
 	pub fn is_empty(&self) -> bool {
-		self.is_empty
+		self.len == 0
 	}
 }
 
-#[cfg(feature = "serde")]
+#[cfg(all(feature = "serde", feature = "alloc"))]
 impl serde::Serialize for Report {
-	fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
 		S: serde::Serializer,
 	{
-		todo!()
+		use serde::ser::SerializeSeq;
+
+		let mut seq = serializer.serialize_seq(Some(self.errors.len()))?;
+
+		for (path, error) in &self.errors {
+			seq.serialize_element(&(path, error))?;
+		}
+
+		seq.end()
+	}
+}
+
+#[cfg(all(feature = "serde", not(feature = "alloc")))]
+impl serde::Serialize for Report {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		serializer.serialize_unit()
 	}
 }

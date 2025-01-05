@@ -22,14 +22,15 @@ url = { version = "2", optional = true, default-features = false }
 wary_derive = { path = "../wary_derive", version = "0.0.3", optional = true }
 semver = { version = "1", optional = true, default-features = false }
 unicode-segmentation = { version = "1", optional = true }
-serde = { version = "1", optional = true, default-features = false }
+serde = { version = "1", optional = true, default-features = false, features = ["derive"] }
 once_cell = { version = "1", optional = true, default-features = false, features = ["critical-section"] }
+axum = { version = "0.8", optional = true, default-features = false, features = ["json"] }
 
 [features]
-default = ["std", "derive"]
+default = ["axum", "std", "derive"]
 full = ["email", "url", "regex", "semver", "graphemes"]
 
-alloc = []
+alloc = ["serde?/alloc"]
 std = ["alloc"]
 
 derive = ["dep:wary_derive"]
@@ -40,5 +41,6 @@ url = ["dep:url"]
 regex = ["dep:regex", "dep:once_cell"]
 semver = ["dep:semver"]
 graphemes = ["dep:unicode-segmentation"]
-serde = ["dep:serde"]
 
+serde = ["dep:serde"]
+axum = ["dep:axum", "serde"]

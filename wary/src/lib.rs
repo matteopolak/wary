@@ -9,6 +9,8 @@
 #![allow(clippy::new_without_default, clippy::wildcard_imports)]
 #![cfg_attr(test, allow(non_upper_case_globals))]
 
+#[cfg(feature = "axum")]
+pub mod axum;
 pub mod error;
 pub mod options;
 

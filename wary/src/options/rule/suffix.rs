@@ -13,15 +13,17 @@ use crate::{
 pub type Rule<S, Mode, Kind> = SuffixRule<S, Mode, Kind>;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
 pub enum Error {
-	#[error("expected string to end with \"{0}\"")]
-	ShouldEndWith(&'static str),
-	#[error("expected string to not end with \"{0}\"")]
-	ShouldNotEndWith(&'static str),
+	#[error("expected string to end with \"{value}\"")]
+	ShouldEndWith { value: &'static str },
+	#[error("expected string to not end with \"{value}\"")]
+	ShouldNotEndWith { value: &'static str },
 	#[error("expected slice to end with")]
-	ShouldEndWithSlice(ItemSlice),
+	ShouldEndWithSlice { value: ItemSlice },
 	#[error("expected slice to not end with")]
-	ShouldNotEndWithSlice(ItemSlice),
+	ShouldNotEndWithSlice { value: ItemSlice },
 }
 
 pub struct Str;
@@ -133,7 +135,7 @@ where
 		if inner.ends_with(suffix) {
 			Ok(())
 		} else {
-			Err(Error::ShouldEndWithSlice(DebugDisplay(&self.suffix).to_string()).into())
+			Err(Error::ShouldEndWithSlice { value: DebugDisplay(&self.suffix).to_string() }.into())
 		}
 	}
 }
@@ -152,7 +154,7 @@ where
 		let suffix = self.suffix.as_slice();
 
 		if inner.ends_with(suffix) {
-			Err(Error::ShouldNotEndWithSlice(DebugDisplay(&self.suffix).to_string()).into())
+			Err(Error::ShouldNotEndWithSlice { value: DebugDisplay(&self.suffix).to_string() }.into())
 		} else {
 			Ok(())
 		}
@@ -173,7 +175,7 @@ where
 		if inner.ends_with(suffix) {
 			Ok(())
 		} else {
-			Err(Error::ShouldEndWith(self.suffix).into())
+			Err(Error::ShouldEndWith { value: self.suffix }.into())
 		}
 	}
 }
@@ -190,7 +192,7 @@ where
 		let suffix = self.suffix;
 
 		if inner.ends_with(suffix) {
-			Err(Error::ShouldNotEndWith(self.suffix).into())
+			Err(Error::ShouldNotEndWith { value: self.suffix }.into())
 		} else {
 			Ok(())
 		}
