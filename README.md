@@ -166,31 +166,31 @@ decision, all rules (except `and`, `or`, `inner`, and `dive`) will have auto-com
 If you're providing no options to a rule, you can omit the parentheses. For example: `#[validate(alphanumeric)]`
 and `#[validate(alphanumeric())]` are equivalent.
 
-| rule | trait | feature |
-| ---- | ----- | ------- |
-| [`addr`](#rule-addr) | [`AsRef<str>`](wary::AsRef) | - |
-| [`alphanumeric`](#rule-alphanumeric) | [`AsRef<str>`](wary::AsRef) | - |
-| [`and`](#rule-and) | - | - |
-| [`ascii`](#rule-ascii) | [`AsRef<str>`](wary::AsRef) | - |
-| [`contains`](#rule-contains) | [`AsSlice`](wary::AsSlice) | - |
-| [`custom`](#rule-custom) | [`Rule<T>`](wary::Rule) | - |
-| [`dive`](#rule-dive) | [`Validate`](wary::Validate) | - |
-| [`email`](#rule-email) | [`AsRef<str>`](wary::AsRef) | `email` |
-| [`equals`](#rule-equals) | [`std::cmp::PartialEq`](std::cmp::PartialEq) | - |
-| [`func`](#rule-func) | `Fn(&T) -> Result<(), wary::Error>` | - |
-| [`inner`](#rule-inner) | [`AsSlice`](wary::AsSlice) | - |
-| [`length`](#rule-length) | [`Length`](wary::Length) | `graphemes` (optional, for `graphemes` length) |
-| [`lowercase`](#rule-lowercase) | [`AsRef<str>`](wary::AsRef) | - |
-| [`or`](#rule-or) | - | - |
-| [`prefix`](#rule-prefix) | [`AsSlice`](wary::AsSlice) | - |
-| [`range`](#rule-range) | [`Compare`](wary::Compare) | - |
-| [`regex`](#rule-regex) | [`AsRef<str>`](wary::AsRef) | `regex` |
-| [`required`](#rule-required) | [`AsSlice`](wary::AsSlice) | - |
-| [`semver`](#rule-semver) | [`AsRef<str>`](wary::AsRef) | `semver` |
-| [`suffix`](#rule-suffix) | [`AsSlice`](wary::AsSlice) | - |
-| [`uppercase`](#rule-uppercase) | [`AsRef<str>`](wary::AsRef) | - |
-| [`url`](#rule-url) | [`AsRef<str>`](wary::AsRef) | `url` |
-| [`uuid`](#rule-uuid) | [`AsRef<str>`](wary::AsRef) | `uuid` |
+| rule | trait | feature | dependency |
+| ---- | ----- | ------- | ---------- |
+| [`addr`](#rule-addr) | [`AsRef<str>`](wary::AsRef) | - | - |
+| [`alphanumeric`](#rule-alphanumeric) | [`AsRef<str>`](wary::AsRef) | - | - |
+| [`and`](#rule-and) | - | - | - |
+| [`ascii`](#rule-ascii) | [`AsRef<str>`](wary::AsRef) | - | - |
+| [`contains`](#rule-contains) | [`AsSlice`](wary::AsSlice) | - | - |
+| [`custom`](#rule-custom) | [`Rule<T>`](wary::Rule) | - | - |
+| [`dive`](#rule-dive) | [`Validate`](wary::Validate) | - | - |
+| [`email`](#rule-email) | [`AsRef<str>`](wary::AsRef) | `email` | [`email_address`](https://github.com/johnstonskj/rust-email_address) |
+| [`equals`](#rule-equals) | [`std::cmp::PartialEq`](std::cmp::PartialEq) | - | - |
+| [`func`](#rule-func) | `Fn(&T) -> Result<(), wary::Error>` | - | - |
+| [`inner`](#rule-inner) | [`AsSlice`](wary::AsSlice) | - | - |
+| [`length`](#rule-length) | [`Length`](wary::Length) | `graphemes` (optional, for `graphemes` length) | [`unicode-segmentation`](https://github.com/unicode-rs/unicode-segmentation) |
+| [`lowercase`](#rule-lowercase) | [`AsRef<str>`](wary::AsRef) | - | - |
+| [`or`](#rule-or) | - | - | - |
+| [`prefix`](#rule-prefix) | [`AsSlice`](wary::AsSlice) | - | - |
+| [`range`](#rule-range) | [`Compare`](wary::Compare) | - | - |
+| [`regex`](#rule-regex) | [`AsRef<str>`](wary::AsRef) | `regex` | [`regex`](https://github.com/rust-lang/regex) |
+| [`required`](#rule-required) | [`AsSlice`](wary::AsSlice) | - | - |
+| [`semver`](#rule-semver) | [`AsRef<str>`](wary::AsRef) | `semver` | [`semver`](https://github.com/dtolnay/semver) |
+| [`suffix`](#rule-suffix) | [`AsSlice`](wary::AsSlice) | - | - |
+| [`uppercase`](#rule-uppercase) | [`AsRef<str>`](wary::AsRef) | - | - |
+| [`url`](#rule-url) | [`AsRef<str>`](wary::AsRef) | `url` | [`url`](https://github.com/servo/rust-url) |
+| [`uuid`](#rule-uuid) | [`AsRef<str>`](wary::AsRef) | `uuid` | [`uuid`](https://github.com/uuid-rs/uuid) |
 
 ### `addr` <a id="rule-addr"></a>
 
@@ -692,13 +692,13 @@ assert!(longer.validate(&()).is_ok());
 
 Transformation rules are applied similarly to validation rules, but are implemented in the [`Modify`](wary::Modify) trait instead.
 
-| rule | trait | feature |
-| ---- | ----- | ------- |
-| [`custom`](#modifier-custom) | [`Modifier`](wary::Modifier) | - |
-| [`dive`](#modifier-dive) | [`Modify`](wary::Modify) | - |
-| [`lowercase`](#modifier-lowercase) | [`AsMut<str>`](wary::AsMut) (for `ascii` only) | - |
-| [`inner`](#modifier-inner) | [`AsMutSlice`](wary::AsMutSlice) | - |
-| [`uppercase`](#modifier-uppercase) | [`AsMut<str>`](wary::AsMut) (for `ascii` only) | - |
+| rule | trait | feature | dependency |
+| ---- | ----- | ------- | ---------- |
+| [`custom`](#modifier-custom) | [`Modifier`](wary::Modifier) | - | - |
+| [`dive`](#modifier-dive) | [`Modify`](wary::Modify) | - | - |
+| [`lowercase`](#modifier-lowercase) | [`AsMut<str>`](wary::AsMut) (for `ascii` only) | - | - |
+| [`inner`](#modifier-inner) | [`AsMutSlice`](wary::AsMutSlice) | - | - |
+| [`uppercase`](#modifier-uppercase) | [`AsMut<str>`](wary::AsMut) (for `ascii` only) | - | - |
 
 ### `custom` <a id="modifier-custom"></a>
 
