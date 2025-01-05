@@ -181,7 +181,7 @@ and `#[validate(alphanumeric())]` are equivalent.
 | [`length`](#rule-length) | [`Length`](wary::Length) | `graphemes` (optional, for `graphemes` length) |
 | [`lowercase`](#rule-lowercase) | [`AsRef<str>`](wary::AsRef) | - |
 | [`prefix`](#rule-prefix) | [`AsSlice`](wary::AsSlice) | - |
-| [`range`](#rule-range) | [`Range`](wary::Range) | - |
+| [`range`](#rule-range) | [`Compare`](wary::Compare) | - |
 | [`regex`](#rule-regex) | [`AsRef<str>`](wary::AsRef) | `regex` |
 | [`required`](#rule-required) | [`AsSlice`](wary::AsSlice) | - |
 | [`semver`](#rule-semver) | [`AsRef<str>`](wary::AsRef) | `semver` |
@@ -594,6 +594,7 @@ Transformation rules are applied similarly to validation rules, but are implemen
 | rule | trait | feature |
 | ---- | ----- | ------- |
 | [`custom`](#modifier-custom) | [`Modifier`](wary::Modifier) | - |
+| [`dive`](#modifier-dive) | [`Modify`](wary::Modify) | - |
 | [`lowercase`](#modifier-lowercase) | [`AsMut<str>`](wary::AsMut) (for `ascii` only) | - |
 | [`inner`](#modifier-inner) | [`AsMutSlice`](wary::AsMutSlice) | - |
 | [`uppercase`](#modifier-uppercase) | [`AsMut<str>`](wary::AsMut) (for `ascii` only) | - |
@@ -634,6 +635,26 @@ struct Person {
 }
 
 # fn main() {}
+```
+
+### `dive` <a id="modifier-dive"></a>
+
+Transforms the inner fields of a struct or enum.
+
+```rust
+use wary::Wary;
+
+#[derive(Wary)]
+struct Item {
+  #[modify(lowercase)]
+  name: String,
+}
+
+#[derive(Wary)]
+struct Name {
+  #[modify(dive)]
+  item: Item,
+}
 ```
 
 ### `lowercase` <a id="modifier-lowercase"></a>

@@ -40,6 +40,7 @@ pub mod modifier {
 	pub use super::{lowercase, uppercase};
 
 	pub mod custom;
+	pub mod dive;
 	pub mod func;
 	pub mod inner;
 }

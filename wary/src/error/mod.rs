@@ -83,7 +83,7 @@ impl Error {
 	}
 
 	#[must_use]
-	pub fn code(&self) -> &'static str {
+	pub(crate) fn code(&self) -> &'static str {
 		match self {
 			Self::Alphanumeric(error) => error.code(),
 			Self::Ascii(error) => error.code(),
@@ -110,7 +110,7 @@ impl Error {
 	}
 
 	#[cfg(feature = "alloc")]
-	pub fn message(&self) -> Option<Cow<str>> {
+	pub(crate) fn message(&self) -> Option<Cow<str>> {
 		Some(match self {
 			Self::Alphanumeric(error) => error.message(),
 			Self::Ascii(error) => error.message(),
@@ -137,7 +137,7 @@ impl Error {
 	}
 
 	#[cfg(not(feature = "alloc"))]
-	pub fn message(&self) -> Option<&'static str> {
+	pub(crate) fn message(&self) -> Option<&'static str> {
 		Some(match self {
 			Self::Alphanumeric(error) => error.message(),
 			Self::Ascii(error) => error.message(),

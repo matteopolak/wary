@@ -41,6 +41,8 @@ pub struct ModifyFieldWrapper {
 	#[darling(default)]
 	inner: Option<Box<ModifyField>>,
 
+	dive: darling::util::Flag,
+
 	#[darling(flatten)]
 	builtin: Map<syn::Path, Option<Args>>,
 }
@@ -56,6 +58,8 @@ struct ModifyField {
 	#[darling(default)]
 	inner: Option<Box<ModifyField>>,
 
+	dive: darling::util::Flag,
+
 	#[darling(flatten)]
 	builtin: Map<syn::Path, Option<Args>>,
 }
@@ -66,6 +70,7 @@ impl ModifyFieldWrapper {
 			func: self.func,
 			custom: self.custom,
 			inner: self.inner,
+			dive: self.dive,
 			builtin: self.builtin,
 		}
 	}
@@ -94,6 +99,7 @@ impl ModifyOptions {
 			func: self.func,
 			custom: self.custom,
 			inner: None,
+			dive: darling::util::Flag::default(),
 			builtin: Map::default(),
 		}
 		.to_token_stream(
@@ -152,6 +158,12 @@ impl ModifyField {
 					ctx,
 					#field
 				);
+			});
+		}
+
+		if self.dive.is_present() {
+			tokens.extend(quote! {
+				#crate_name::Modify::modify(#field, ctx);
 			});
 		}
 
