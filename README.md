@@ -190,6 +190,7 @@ and `#[validate(alphanumeric())]` are equivalent.
 | [`suffix`](#rule-suffix) | [`AsSlice`](wary::AsSlice) | - |
 | [`uppercase`](#rule-uppercase) | [`AsRef<str>`](wary::AsRef) | - |
 | [`url`](#rule-url) | [`AsRef<str>`](wary::AsRef) | `url` |
+| [`uuid`](#rule-uuid) | [`AsRef<str>`](wary::AsRef) | `uuid` |
 
 ### `addr` <a id="rule-addr"></a>
 
@@ -632,6 +633,20 @@ use wary::Wary;
 #[derive(Wary)]
 struct Url(
   #[validate(url)]
+  String
+);
+```
+
+### `uuid` (requires feature `uuid`) <a id="rule-uuid"></a>
+
+Validates that the input is a uuid.
+
+```rust
+use wary::Wary;
+
+#[derive(Wary)]
+struct Uuid(
+  #[validate(uuid)]
   String
 );
 ```
