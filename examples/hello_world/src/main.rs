@@ -13,5 +13,5 @@ fn main() {
 
 	item.modify(&());
 
-	println!("{:?}", item);
+	assert_eq!(item.name, vec!["hello", "world"]);
 }

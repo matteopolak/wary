@@ -29,15 +29,22 @@ pub mod rule {
 	#[cfg(feature = "semver")]
 	pub mod semver;
 	pub mod suffix;
+	#[cfg(feature = "uuid")]
+	pub mod uuid;
 
+	pub mod and;
 	pub mod custom;
 	pub mod dive;
 	pub mod func;
 	pub mod inner;
+	pub mod or;
 }
 
 pub mod modifier {
 	pub use super::{lowercase, uppercase};
+
+	#[cfg(feature = "alloc")]
+	pub mod trim;
 
 	pub mod custom;
 	pub mod dive;

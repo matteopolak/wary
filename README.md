@@ -170,6 +170,7 @@ and `#[validate(alphanumeric())]` are equivalent.
 | ---- | ----- | ------- |
 | [`addr`](#rule-addr) | [`AsRef<str>`](wary::AsRef) | - |
 | [`alphanumeric`](#rule-alphanumeric) | [`AsRef<str>`](wary::AsRef) | - |
+| [`and`](#rule-and) | - | - |
 | [`ascii`](#rule-ascii) | [`AsRef<str>`](wary::AsRef) | - |
 | [`contains`](#rule-contains) | [`AsSlice`](wary::AsSlice) | - |
 | [`custom`](#rule-custom) | [`Rule<T>`](wary::Rule) | - |
@@ -180,6 +181,7 @@ and `#[validate(alphanumeric())]` are equivalent.
 | [`inner`](#rule-inner) | [`AsSlice`](wary::AsSlice) | - |
 | [`length`](#rule-length) | [`Length`](wary::Length) | `graphemes` (optional, for `graphemes` length) |
 | [`lowercase`](#rule-lowercase) | [`AsRef<str>`](wary::AsRef) | - |
+| [`or`](#rule-or) | - | - |
 | [`prefix`](#rule-prefix) | [`AsSlice`](wary::AsSlice) | - |
 | [`range`](#rule-range) | [`Compare`](wary::Compare) | - |
 | [`regex`](#rule-regex) | [`AsRef<str>`](wary::AsRef) | `regex` |
@@ -189,7 +191,7 @@ and `#[validate(alphanumeric())]` are equivalent.
 | [`uppercase`](#rule-uppercase) | [`AsRef<str>`](wary::AsRef) | - |
 | [`url`](#rule-url) | [`AsRef<str>`](wary::AsRef) | `url` |
 
-### `addr`
+### `addr` <a id="rule-addr"></a>
 
 Validates an address (currently only an IP).
 
@@ -207,7 +209,7 @@ struct Packet {
 }
 ```
 
-### `alphanumeric`
+### `alphanumeric` <a id="rule-alphanumeric"></a>
 
 Validates that the input is alphanumeric.
 
@@ -221,6 +223,42 @@ struct Name {
   #[validate(alphanumeric(ascii))]
   right: String,
 }
+```
+
+### `and` <a id="rule-and"></a>
+
+Meta-rule that combines multiple rules. Unlike other rule lists, this one **short-circuits on the first error**.
+
+```rust
+use wary::{Wary, Validate};
+
+#[derive(Wary)]
+struct NameAnd {
+  #[validate(and(equals(other = 1), range(2..=2)))]
+  value: u8
+}
+
+let name = NameAnd {
+  value: 3,
+};
+
+let report = name.validate(&()).unwrap_err();
+
+assert_eq!(report.len(), 1);
+
+#[derive(Wary)]
+struct Name {
+  #[validate(equals(other = 1), range(2..=2))]
+  value: u8
+}
+
+let name = Name {
+  value: 3,
+};
+
+let report = name.validate(&()).unwrap_err();
+
+assert_eq!(report.len(), 2);
 ```
 
 ### `ascii` <a id="rule-ascii"></a>
@@ -428,6 +466,54 @@ struct Name {
   #[validate(lowercase(ascii))]
   right: String,
 }
+```
+
+### `or` <a id="rule-or"></a>
+
+Meta-rule that combines multiple rules. Short-circuits on the first success.
+
+```rust
+use wary::{Wary, Validate};
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+mod rule {
+  pub type debug = super::DebugRule;
+}
+
+struct DebugRule;
+
+impl DebugRule {
+  fn new() -> Self {
+    Self
+  }
+}
+
+static DEBUG_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+impl<I> wary::Rule<I> for DebugRule {
+  type Context = ();
+
+  fn validate(&self, _ctx: &Self::Context, item: &I) -> Result<(), wary::Error> {
+    DEBUG_COUNTER.fetch_add(1, Ordering::Relaxed);
+    Ok(())
+  }
+}
+
+#[derive(Wary)]
+struct NameOr {
+  #[validate(or(equals(other = 1), custom(debug)))]
+  value: u8
+}
+
+# fn main() {
+let name = NameOr {
+  value: 1,
+};
+
+let report = name.validate(&()).unwrap();
+
+assert_eq!(DEBUG_COUNTER.load(Ordering::Relaxed), 0);
+# }
 ```
 
 ### `prefix` <a id="rule-prefix"></a>

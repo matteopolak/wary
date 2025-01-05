@@ -3,12 +3,12 @@ name = "wary"
 version = "0.0.3"
 description = "A simple validation library"
 edition = "2021"
-rust-version = "1.78"
-license = "MIT OR Apache-2.0"
-authors = ["Matthew Polak <contact@matteopolak.com>"]
-repository = "https://github.com/matteopolak/wary"
-keywords = ["validation", "validate", "transform", "no_std", "no_alloc"]
-categories = ["no-std", "no-std::no-alloc"]
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
 
 [package.metadata.docs.rs]
 all-features = true
@@ -24,10 +24,11 @@ semver = { version = "1", optional = true, default-features = false }
 unicode-segmentation = { version = "1", optional = true }
 serde = { version = "1", optional = true, default-features = false, features = ["derive"] }
 once_cell = { version = "1", optional = true, default-features = false, features = ["critical-section"] }
+uuid = { version = "1", optional = true, default-features = false }
 
 [features]
-default = ["alloc", "derive"]
-full = ["email", "url", "regex", "semver", "graphemes"]
+default = ["std", "derive", "uuid"]
+full = ["email", "url", "regex", "semver", "graphemes", "uuid"]
 
 alloc = ["serde?/alloc"]
 std = ["alloc"]
@@ -40,5 +41,6 @@ url = ["dep:url"]
 regex = ["dep:regex", "dep:once_cell"]
 semver = ["dep:semver"]
 graphemes = ["dep:unicode-segmentation"]
+uuid = ["dep:uuid"]
 
 serde = ["dep:serde"]

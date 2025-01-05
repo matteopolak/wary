@@ -47,6 +47,9 @@ pub enum Error {
 	Regex(#[from] rule::regex::Error),
 	#[error(transparent)]
 	Required(#[from] rule::required::Error),
+	#[cfg(feature = "uuid")]
+	#[error(transparent)]
+	Uuid(#[from] rule::uuid::Error),
 	#[error("{code}")]
 	Custom {
 		code: &'static str,
@@ -65,6 +68,11 @@ impl Error {
 			code,
 			message: None,
 		}
+	}
+
+	#[must_use]
+	pub fn is_custom(&self) -> bool {
+		matches!(self, Self::Custom { .. })
 	}
 
 	#[cfg(feature = "alloc")]
@@ -106,6 +114,7 @@ impl Error {
 			#[cfg(feature = "regex")]
 			Self::Regex(error) => error.code(),
 			Self::Required(error) => error.code(),
+			Self::Uuid(error) => error.code(),
 			Self::Custom { code, .. } => code,
 		}
 	}
@@ -133,6 +142,7 @@ impl Error {
 			#[cfg(feature = "regex")]
 			Self::Regex(error) => error.message(),
 			Self::Required(error) => error.message(),
+			Self::Uuid(error) => error.message(),
 			Self::Custom { message, .. } => return message.as_deref().map(Cow::Borrowed),
 		})
 	}
@@ -160,6 +170,7 @@ impl Error {
 			#[cfg(feature = "regex")]
 			Self::Regex(error) => error.message(),
 			Self::Required(error) => error.message(),
+			Self::Uuid(error) => error.message(),
 			Self::Custom { message, .. } => return *message,
 		})
 	}
@@ -185,22 +196,57 @@ impl Report {
 	pub fn is_empty(&self) -> bool {
 		self.errors.is_empty()
 	}
+
+	#[must_use]
+	pub fn len(&self) -> usize {
+		self.errors.len()
+	}
+
+	pub fn clear(&mut self) {
+		self.errors.clear();
+	}
+
+	pub fn extend(&mut self, other: Self) {
+		self.errors.extend(other.errors);
+	}
 }
 
 #[cfg(not(feature = "alloc"))]
 impl Report {
 	pub fn push(&mut self, path: Path, error: Error) {
-		if self.len == self.errors.len() {
-			return;
+		if self.len < self.errors.len() {
+			self.errors[self.len] = Some((path, error));
 		}
 
-		self.errors[self.len] = Some((path, error));
 		self.len += 1;
 	}
 
 	#[must_use]
 	pub fn is_empty(&self) -> bool {
 		self.len == 0
+	}
+
+	#[must_use]
+	pub fn len(&self) -> usize {
+		self.len
+	}
+
+	pub fn clear(&mut self) {
+		for i in 0..self.len.min(self.errors.len()) {
+			self.errors[i] = None;
+		}
+
+		self.len = 0;
+	}
+
+	pub fn extend(&mut self, other: Self) {
+		for i in 0..other.len.min(other.errors.len()) {
+			if self.len < self.errors.len() {
+				self.errors[self.len] = other.errors[i];
+			}
+
+			self.len += 1;
+		}
 	}
 }
 
@@ -209,10 +255,11 @@ mod ser {
 	use super::*;
 
 	#[derive(serde::Serialize)]
-	struct Detail<'d> {
+	struct Inner<'d> {
 		path: &'d Path,
 		code: &'static str,
 		message: Option<Cow<'d, str>>,
+		#[serde(skip_serializing_if = "Error::is_custom")]
 		detail: &'d Error,
 	}
 
@@ -227,7 +274,7 @@ mod ser {
 			let mut seq = serializer.serialize_seq(Some(self.errors.len()))?;
 
 			for (path, error) in &self.errors {
-				let detail = Detail {
+				let detail = Inner {
 					path,
 					code: error.code(),
 					message: error.message(),
@@ -253,7 +300,7 @@ mod ser {
 
 			for i in 0..self.len {
 				if let Some((path, error)) = &self.errors[i] {
-					let detail = Detail {
+					let detail = Inner {
 						path,
 						code: error.code(),
 						message: error.message(),

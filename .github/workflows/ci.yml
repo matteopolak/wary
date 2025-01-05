@@ -25,7 +25,7 @@ jobs:
         id: toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: nightly
+          toolchain: 1.56.0
           targets: x86_64-unknown-none
           components: rustfmt, clippy
       - name: setup cache

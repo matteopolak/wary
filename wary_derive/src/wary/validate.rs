@@ -18,12 +18,16 @@ pub struct Validate {
 	pub or: Tuple<ValidateField>,
 
 	#[darling(default)]
+	pub and: Tuple<ValidateField>,
+
+	#[darling(default)]
 	pub custom: Map<syn::Path, Option<Args>>,
 }
 
 pub struct ValidateOptions {
 	pub func: Vec<syn::Expr>,
 	pub or: Tuple<ValidateField>,
+	pub and: Tuple<ValidateField>,
 	pub custom: Map<syn::Path, Option<Args>>,
 }
 
@@ -72,6 +76,9 @@ pub struct ValidateFieldWrapper {
 	or: Tuple<ValidateField>,
 
 	#[darling(default)]
+	and: Tuple<ValidateField>,
+
+	#[darling(default)]
 	custom: Map<syn::Path, Option<Args>>,
 
 	#[darling(default)]
@@ -96,9 +103,18 @@ impl ValidateField {
 		top: bool,
 	) -> proc_macro2::TokenStream {
 		let mut tokens = proc_macro2::TokenStream::new();
-		let option_path = crate::attr::extract_option_path(ty);
 
-		let field_path = field.path();
+		if top {
+			tokens.extend({
+				let field_path = field.path();
+
+				quote! {
+					let __wary_field = #field_path;
+				}
+			});
+		}
+
+		let option_path = crate::attr::extract_option_path(ty);
 
 		if option_path.is_none() {
 			if let Some(args) = &self.required {
@@ -108,7 +124,7 @@ impl ValidateField {
 						&(),
 						#field
 					) {
-						__wary_report.push(__wary_parent.append(#field_path), e);
+						__wary_report.push(__wary_parent.append(__wary_field), e);
 					};
 				});
 			}
@@ -148,7 +164,7 @@ impl ValidateField {
 					&(),
 					#field
 				) {
-					__wary_report.push(__wary_parent.append(#field_path), e);
+					__wary_report.push(__wary_parent.append(__wary_field), e);
 				};
 			});
 		}
@@ -157,15 +173,12 @@ impl ValidateField {
 			let inner = inner.to_token_stream(crate_name, field, ty, false);
 
 			tokens.extend(quote! {
-				if let Err(e) = (|| {
-					for #field in #crate_name::AsSlice::as_slice(#field) {
+				{
+					let __wary_parent = __wary_parent.append(__wary_field);
+					for (__wary_field, #field) in #crate_name::AsSlice::as_slice(#field).iter().enumerate() {
 						#inner
 					}
-
-					Ok::<(), #crate_name::Error>(())
-				})() {
-					__wary_report.push(__wary_parent.append(#field_path), e);
-				};
+				}
 			});
 		}
 
@@ -174,7 +187,7 @@ impl ValidateField {
 				{
 					let result: ::core::result::Result<(), #crate_name::Error> = (#func)(ctx, #field);
 					if let Err(e) = result {
-						__wary_report.push(__wary_parent.append(#field_path), e);
+						__wary_report.push(__wary_parent.append(__wary_field), e);
 					};
 				}
 			});
@@ -187,54 +200,74 @@ impl ValidateField {
 					ctx,
 					#field
 				) {
-					__wary_report.push(__wary_parent.append(#field_path), e);
+					__wary_report.push(__wary_parent.append(__wary_field), e);
 				};
 			});
 		}
 
-		for and in &mut self.and.0 {
+		let mut and = self.and.0.iter_mut();
+
+		if let Some(and) = and.next() {
 			let expand = and.to_token_stream(crate_name, field, ty, false);
 
 			tokens.extend(quote! {
+				let __wary_len = __wary_report.len();
 				#expand ;
 			});
 		}
 
+		for and in and {
+			let expand = and.to_token_stream(crate_name, field, ty, false);
+
+			tokens.extend(quote! {
+				if __wary_report.len() == __wary_len {
+					#expand ;
+				}
+			});
+		}
+
 		let mut or = self.or.0.iter_mut();
+		let mut or_tokens = proc_macro2::TokenStream::new();
 
 		if let Some(or) = or.next() {
 			let expand = or.to_token_stream(crate_name, field, ty, false);
 
-			tokens.extend(quote! {
-				let __wary_last: ::core::result::Result<(), #crate_name::Error> = (|| {
+			or_tokens.extend(quote! {
+				let mut __wary_report_inner = #crate_name::error::Report::default();
+				{
+					let mut __wary_report = &mut __wary_report_inner;
 					#expand ;
-					Ok(())
-				})();
+				}
 			});
 		}
 
 		for or in or {
 			let expand = or.to_token_stream(crate_name, field, ty, false);
 
-			tokens.extend(quote! {
-				let __wary_last: ::core::result::Result<(), #crate_name::Error> = __wary_last.or_else(|_| {
+			or_tokens.extend(quote! {
+				if !__wary_report_inner.is_empty() {
+					__wary_report_inner.clear();
+					let mut __wary_report = &mut __wary_report_inner;
 					#expand ;
-					Ok(())
-				});
+				}
 			});
 		}
 
 		if !self.or.0.is_empty() {
+			or_tokens.extend(quote! {
+				__wary_report.extend(__wary_report_inner);
+			});
+
 			tokens.extend(quote! {
-				if let Err(e) = __wary_last {
-					__wary_report.push(__wary_parent.append(#field_path), e);
-				};
+				{
+					#or_tokens
+				}
 			});
 		}
 
 		if self.dive.is_present() {
 			tokens.extend(quote! {
-				#crate_name::Validate::validate_into(#field, ctx, &__wary_parent.append(#field_path), __wary_report);
+				#crate_name::Validate::validate_into(#field, ctx, &__wary_parent.append(__wary_field), __wary_report);
 			});
 		}
 
@@ -248,7 +281,7 @@ impl ValidateField {
 							&(),
 							#field
 						) {
-							__wary_report.push(__wary_parent.append(#field_path), e);
+							__wary_report.push(__wary_parent.append(__wary_field), e);
 						};
 					}
 				},
@@ -281,7 +314,7 @@ impl ValidateOptions {
 			func: self.func,
 			custom: self.custom,
 			or: self.or,
-			and: Tuple::default(),
+			and: self.and,
 			dive: darling::util::Flag::default(),
 			inner: None,
 			required: None,
@@ -301,7 +334,7 @@ impl ValidateFieldWrapper {
 		ValidateField {
 			func: self.func,
 			or: self.or,
-			and: Tuple::default(),
+			and: self.and,
 			custom: self.custom,
 			inner: self.inner,
 			builtin: self.builtin,

@@ -78,6 +78,7 @@ impl Emit {
 				validate_top: ValidateOptions {
 					func: self.validate.func,
 					or: self.validate.or,
+					and: self.validate.and,
 					custom: self.validate.custom,
 				},
 				modify_top: ModifyOptions {
@@ -93,6 +94,7 @@ impl Emit {
 				validate_top: ValidateOptions {
 					func: self.validate.func,
 					or: self.validate.or,
+					and: self.validate.and,
 					custom: self.validate.custom,
 				},
 				modify_top: ModifyOptions {
