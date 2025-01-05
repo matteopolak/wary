@@ -27,7 +27,7 @@ once_cell = { version = "1", optional = true, default-features = false, features
 uuid = { version = "1", optional = true, default-features = false }
 
 [features]
-default = ["std", "derive", "uuid"]
+default = ["std", "derive"]
 full = ["email", "url", "regex", "semver", "graphemes", "uuid"]
 
 alloc = ["serde?/alloc"]

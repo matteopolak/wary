@@ -114,6 +114,7 @@ impl Error {
 			#[cfg(feature = "regex")]
 			Self::Regex(error) => error.code(),
 			Self::Required(error) => error.code(),
+			#[cfg(feature = "uuid")]
 			Self::Uuid(error) => error.code(),
 			Self::Custom { code, .. } => code,
 		}
@@ -142,6 +143,7 @@ impl Error {
 			#[cfg(feature = "regex")]
 			Self::Regex(error) => error.message(),
 			Self::Required(error) => error.message(),
+			#[cfg(feature = "uuid")]
 			Self::Uuid(error) => error.message(),
 			Self::Custom { message, .. } => return message.as_deref().map(Cow::Borrowed),
 		})
@@ -170,6 +172,7 @@ impl Error {
 			#[cfg(feature = "regex")]
 			Self::Regex(error) => error.message(),
 			Self::Required(error) => error.message(),
+			#[cfg(feature = "uuid")]
 			Self::Uuid(error) => error.message(),
 			Self::Custom { message, .. } => return *message,
 		})
