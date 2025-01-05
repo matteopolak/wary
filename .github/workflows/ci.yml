@@ -42,3 +42,7 @@ jobs:
         run: cargo fmt --all -- --check
       - name: cargo clippy
         run: cargo clippy --all-targets -- -D warnings
+      - name: check no_alloc
+        run: cargo check --target x86_64-unknown-none --no-default-features
+      - name: check no_std
+        run: cargo check --target x86_64-unknown-none --no-default-features --features alloc

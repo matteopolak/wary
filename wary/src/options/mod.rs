@@ -2,6 +2,9 @@
 
 use core::fmt;
 
+#[cfg(feature = "alloc")]
+use crate::alloc::{format, string::String};
+
 pub mod rule {
 	pub use super::{lowercase, uppercase};
 

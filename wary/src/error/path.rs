@@ -128,7 +128,7 @@ impl<'l> IntoIterator for &'l Path {
 	type Item = Elem;
 
 	#[cfg(feature = "alloc")]
-	fn into_iter(self) -> Self::IntoIter {
+	fn into_iter(self) -> Iter<'l> {
 		Iter {
 			next: match self {
 				Path::NonEmpty { tail, .. } => Some(tail),
@@ -138,7 +138,7 @@ impl<'l> IntoIterator for &'l Path {
 	}
 
 	#[cfg(not(feature = "alloc"))]
-	fn into_iter(self) -> Self::IntoIter {
+	fn into_iter(self) -> Iter<'l> {
 		Iter { next: None }
 	}
 }

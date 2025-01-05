@@ -13,8 +13,6 @@
 )]
 #![cfg_attr(test, allow(non_upper_case_globals))]
 
-#[cfg(feature = "axum")]
-pub mod axum;
 pub mod error;
 pub mod options;
 
@@ -23,7 +21,7 @@ pub mod options;
 pub extern crate alloc;
 #[cfg(feature = "alloc")]
 use alloc::{string::String, vec::Vec};
-use core::option::Option;
+use core::prelude::rust_2021::*;
 #[doc(hidden)]
 #[cfg(feature = "std")]
 pub use std as alloc;
@@ -69,12 +67,13 @@ pub mod toolbox {
 	pub mod rule {
 		//! A collection of common imports for writing rules and modifiers.
 
-		pub use core::marker::PhantomData;
+		pub use core::{marker::PhantomData, prelude::rust_2021::*};
 
 		#[cfg(feature = "alloc")]
 		pub(crate) use crate::alloc::{
 			borrow::Cow,
 			boxed::Box,
+			format,
 			string::{String, ToString},
 			vec,
 			vec::Vec,

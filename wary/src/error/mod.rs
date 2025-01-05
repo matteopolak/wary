@@ -138,7 +138,7 @@ impl Error {
 
 	#[cfg(not(feature = "alloc"))]
 	pub fn message(&self) -> Option<&'static str> {
-		match self {
+		Some(match self {
 			Self::Alphanumeric(error) => error.message(),
 			Self::Ascii(error) => error.message(),
 			Self::Addr(error) => error.message(),
@@ -159,8 +159,8 @@ impl Error {
 			#[cfg(feature = "regex")]
 			Self::Regex(error) => error.message(),
 			Self::Required(error) => error.message(),
-			Self::Custom { message, .. } => message,
-		}
+			Self::Custom { message, .. } => return *message,
+		})
 	}
 }
 
@@ -203,7 +203,7 @@ impl Report {
 	}
 }
 
-#[cfg(all(feature = "serde", feature = "alloc"))]
+#[cfg(feature = "serde")]
 mod ser {
 	use super::*;
 
@@ -215,6 +215,7 @@ mod ser {
 		data: &'d Error,
 	}
 
+	#[cfg(feature = "alloc")]
 	impl serde::Serialize for Report {
 		fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 		where
@@ -238,14 +239,29 @@ mod ser {
 			seq.end()
 		}
 	}
-}
 
-#[cfg(all(feature = "serde", not(feature = "alloc")))]
-impl serde::Serialize for Report {
-	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where
-		S: serde::Serializer,
-	{
-		serializer.serialize_unit()
+	#[cfg(not(feature = "alloc"))]
+	impl serde::Serialize for Report {
+		fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+		where
+			S: serde::Serializer,
+		{
+			use serde::ser::SerializeSeq;
+
+			let mut seq = serializer.serialize_seq(Some(self.len))?;
+
+			for i in 0..self.len {
+				if let Some((path, error)) = &self.errors[i] {
+					let detail = Detail {
+						path,
+						code: error.code(),
+						message: error.message(),
+						data: error,
+					};
+
+					seq.serialize_element(&detail)?;
+				}
+			}
+		}
 	}
 }

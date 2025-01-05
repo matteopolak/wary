@@ -24,10 +24,9 @@ semver = { version = "1", optional = true, default-features = false }
 unicode-segmentation = { version = "1", optional = true }
 serde = { version = "1", optional = true, default-features = false, features = ["derive"] }
 once_cell = { version = "1", optional = true, default-features = false, features = ["critical-section"] }
-axum = { version = "0.8", optional = true, default-features = false, features = ["json"] }
 
 [features]
-default = ["std", "derive"]
+default = ["alloc", "derive"]
 full = ["email", "url", "regex", "semver", "graphemes"]
 
 alloc = ["serde?/alloc"]
@@ -43,4 +42,3 @@ semver = ["dep:semver"]
 graphemes = ["dep:unicode-segmentation"]
 
 serde = ["dep:serde"]
-axum = ["dep:axum", "serde"]
