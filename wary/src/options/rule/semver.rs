@@ -7,6 +7,38 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule = SemverRule;
 
+#[derive(Debug, thiserror::Error, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
+pub enum Error {
+	#[error("expected semantic version")]
+	Semver,
+}
+
+impl Error {
+	#[must_use]
+	pub fn code(&self) -> &'static str {
+		match self {
+			Self::Semver => "semver",
+		}
+	}
+
+	#[cfg(feature = "alloc")]
+	#[must_use]
+	pub fn message(&self) -> Cow<'static, str> {
+		match self {
+			Self::Semver => "expected semantic version".into(),
+		}
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn message(&self) -> &'static str {
+		match self {
+			Self::Semver => "expected semantic version",
+		}
+	}
+}
+
 /// Rule for semantic versioning validation.
 ///
 /// # Example
@@ -52,7 +84,7 @@ where
 		// TODO: https://github.com/dtolnay/semver/issues/326
 		version
 			.parse::<semver::Version>()
-			.map_err(|_| crate::error::Error::Semver)?;
+			.map_err(|_| Error::Semver)?;
 
 		Ok(())
 	}

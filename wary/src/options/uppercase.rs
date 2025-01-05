@@ -9,6 +9,41 @@ pub type Rule<Mode> = Uppercase<Mode>;
 #[doc(hidden)]
 pub type Modifier<Mode> = Uppercase<Mode>;
 
+#[derive(Debug, thiserror::Error, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
+pub enum Error {
+	#[error("expected uppercase character at position {position}")]
+	Uppercase { position: usize },
+}
+
+impl Error {
+	#[must_use]
+	pub fn code(&self) -> &'static str {
+		match self {
+			Self::Uppercase { .. } => "uppercase",
+		}
+	}
+
+	#[cfg(feature = "alloc")]
+	#[must_use]
+	pub fn message(&self) -> Cow<'static, str> {
+		match self {
+			Self::Uppercase { position } => {
+				format!("expected uppercase character at position {position}")
+			}
+		}
+		.into()
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn message(&self) -> &'static str {
+		match self {
+			Self::Uppercase { .. } => "expected uppercase character",
+		}
+	}
+}
+
 pub struct Ascii;
 
 /// Rule and modifier for ensuring that a string is entirely uppercase.
@@ -74,7 +109,7 @@ where
 
 		for (idx, ch) in string.chars().enumerate() {
 			if !ch.is_uppercase() && !ch.is_whitespace() {
-				return Err(Error::Uppercase { position: idx });
+				return Err(Error::Uppercase { position: idx }.into());
 			}
 		}
 
@@ -94,7 +129,7 @@ where
 
 		for (idx, ch) in string.chars().enumerate() {
 			if !ch.is_ascii_uppercase() && !ch.is_ascii_whitespace() {
-				return Err(Error::Uppercase { position: idx });
+				return Err(Error::Uppercase { position: idx }.into());
 			}
 		}
 

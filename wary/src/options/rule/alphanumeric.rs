@@ -7,6 +7,39 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule<Mode> = AlphanumericRule<Mode>;
 
+#[derive(Debug, thiserror::Error, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
+pub enum Error {
+	#[error("value should be alphanumeric")]
+	Alphanumeric,
+}
+
+impl Error {
+	#[must_use]
+	pub fn code(&self) -> &'static str {
+		match self {
+			Self::Alphanumeric => "alphanumeric",
+		}
+	}
+
+	#[cfg(feature = "alloc")]
+	#[must_use]
+	pub fn message(&self) -> Cow<'static, str> {
+		match self {
+			Self::Alphanumeric => "value should be alphanumeric",
+		}
+		.into()
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn message(&self) -> &'static str {
+		match self {
+			Self::Alphanumeric => "value should be alphanumeric",
+		}
+	}
+}
+
 pub struct Ascii;
 
 /// Rule for alphanumeric validation.
@@ -66,7 +99,7 @@ where
 		if string.chars().all(char::is_alphanumeric) {
 			Ok(())
 		} else {
-			Err(Error::Alphanumeric)
+			Err(Error::Alphanumeric.into())
 		}
 	}
 }
@@ -83,7 +116,7 @@ where
 		if string.chars().all(|ch| ch.is_ascii_alphanumeric()) {
 			Ok(())
 		} else {
-			Err(Error::Alphanumeric)
+			Err(Error::Alphanumeric.into())
 		}
 	}
 }

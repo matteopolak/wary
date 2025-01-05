@@ -11,16 +11,16 @@ use crate::options::rule;
 #[cfg_attr(feature = "serde", serde(untagged))]
 #[non_exhaustive]
 pub enum Error {
-	#[error("value is not alphanumeric")]
-	Alphanumeric,
-	#[error("value is not ascii")]
-	Ascii,
+	#[error(transparent)]
+	Alphanumeric(#[from] rule::alphanumeric::Error),
+	#[error(transparent)]
+	Ascii(#[from] rule::ascii::Error),
 	#[error(transparent)]
 	Addr(#[from] rule::addr::Error),
-	#[error("found non-lowercase character at position {position}")]
-	Lowercase { position: usize },
-	#[error("found non-uppercase character at position {position}")]
-	Uppercase { position: usize },
+	#[error(transparent)]
+	Lowercase(#[from] rule::lowercase::Error),
+	#[error(transparent)]
+	Uppercase(#[from] rule::uppercase::Error),
 	#[error(transparent)]
 	Contains(#[from] rule::contains::Error),
 	#[error(transparent)]
@@ -31,17 +31,17 @@ pub enum Error {
 	Equals(#[from] rule::equals::Error),
 	#[cfg(feature = "email")]
 	#[error(transparent)]
-	Email(#[from] email_address::Error),
+	Email(#[from] rule::email::Error),
 	#[cfg(feature = "url")]
 	#[error(transparent)]
-	Url(#[from] url::ParseError),
+	Url(#[from] rule::url::Error),
 	#[error(transparent)]
 	Length(#[from] rule::length::Error),
 	#[error(transparent)]
 	Range(#[from] rule::range::Error),
 	#[cfg(feature = "semver")]
-	#[error("value is not a valid semver version")]
-	Semver,
+	#[error(transparent)]
+	Semver(#[from] rule::semver::Error),
 	#[cfg(feature = "regex")]
 	#[error(transparent)]
 	Regex(#[from] rule::regex::Error),
@@ -79,6 +79,87 @@ impl Error {
 		Self::Custom {
 			code,
 			message: Some(message),
+		}
+	}
+
+	#[must_use]
+	pub fn code(&self) -> &'static str {
+		match self {
+			Self::Alphanumeric(error) => error.code(),
+			Self::Ascii(error) => error.code(),
+			Self::Addr(error) => error.code(),
+			Self::Lowercase(error) => error.code(),
+			Self::Uppercase(error) => error.code(),
+			Self::Contains(error) => error.code(),
+			Self::Prefix(error) => error.code(),
+			Self::Suffix(error) => error.code(),
+			Self::Equals(error) => error.code(),
+			#[cfg(feature = "email")]
+			Self::Email(error) => error.code(),
+			#[cfg(feature = "url")]
+			Self::Url(error) => error.code(),
+			Self::Length(error) => error.code(),
+			Self::Range(error) => error.code(),
+			#[cfg(feature = "semver")]
+			Self::Semver(error) => error.code(),
+			#[cfg(feature = "regex")]
+			Self::Regex(error) => error.code(),
+			Self::Required(error) => error.code(),
+			Self::Custom { code, .. } => code,
+		}
+	}
+
+	#[cfg(feature = "alloc")]
+	pub fn message(&self) -> Option<Cow<str>> {
+		Some(match self {
+			Self::Alphanumeric(error) => error.message(),
+			Self::Ascii(error) => error.message(),
+			Self::Addr(error) => error.message(),
+			Self::Lowercase(error) => error.message(),
+			Self::Uppercase(error) => error.message(),
+			Self::Contains(error) => error.message(),
+			Self::Prefix(error) => error.message(),
+			Self::Suffix(error) => error.message(),
+			Self::Equals(error) => error.message(),
+			#[cfg(feature = "email")]
+			Self::Email(error) => error.message(),
+			#[cfg(feature = "url")]
+			Self::Url(error) => error.message(),
+			Self::Length(error) => error.message(),
+			Self::Range(error) => error.message(),
+			#[cfg(feature = "semver")]
+			Self::Semver(error) => error.message(),
+			#[cfg(feature = "regex")]
+			Self::Regex(error) => error.message(),
+			Self::Required(error) => error.message(),
+			Self::Custom { message, .. } => return message.as_deref().map(Cow::Borrowed),
+		})
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn message(&self) -> Option<&'static str> {
+		match self {
+			Self::Alphanumeric(error) => error.message(),
+			Self::Ascii(error) => error.message(),
+			Self::Addr(error) => error.message(),
+			Self::Lowercase(error) => error.message(),
+			Self::Uppercase(error) => error.message(),
+			Self::Contains(error) => error.message(),
+			Self::Prefix(error) => error.message(),
+			Self::Suffix(error) => error.message(),
+			Self::Equals(error) => error.message(),
+			#[cfg(feature = "email")]
+			Self::Email(error) => error.message(),
+			#[cfg(feature = "url")]
+			Self::Url(error) => error.message(),
+			Self::Length(error) => error.message(),
+			Self::Range(error) => error.message(),
+			#[cfg(feature = "semver")]
+			Self::Semver(error) => error.message(),
+			#[cfg(feature = "regex")]
+			Self::Regex(error) => error.message(),
+			Self::Required(error) => error.message(),
+			Self::Custom { message, .. } => message,
 		}
 	}
 }
@@ -123,20 +204,39 @@ impl Report {
 }
 
 #[cfg(all(feature = "serde", feature = "alloc"))]
-impl serde::Serialize for Report {
-	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-	where
-		S: serde::Serializer,
-	{
-		use serde::ser::SerializeSeq;
+mod ser {
+	use super::*;
 
-		let mut seq = serializer.serialize_seq(Some(self.errors.len()))?;
+	#[derive(serde::Serialize)]
+	struct Detail<'d> {
+		path: &'d Path,
+		code: &'static str,
+		message: Option<Cow<'d, str>>,
+		data: &'d Error,
+	}
 
-		for (path, error) in &self.errors {
-			seq.serialize_element(&(path, error))?;
+	impl serde::Serialize for Report {
+		fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+		where
+			S: serde::Serializer,
+		{
+			use serde::ser::SerializeSeq;
+
+			let mut seq = serializer.serialize_seq(Some(self.errors.len()))?;
+
+			for (path, error) in &self.errors {
+				let detail = Detail {
+					path,
+					code: error.code(),
+					message: error.message(),
+					data: error,
+				};
+
+				seq.serialize_element(&detail)?;
+			}
+
+			seq.end()
 		}
-
-		seq.end()
 	}
 }
 

@@ -27,7 +27,7 @@ once_cell = { version = "1", optional = true, default-features = false, features
 axum = { version = "0.8", optional = true, default-features = false, features = ["json"] }
 
 [features]
-default = ["axum", "std", "derive"]
+default = ["std", "derive"]
 full = ["email", "url", "regex", "semver", "graphemes"]
 
 alloc = ["serde?/alloc"]

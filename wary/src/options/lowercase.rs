@@ -9,6 +9,41 @@ pub type Rule<Mode> = Lowercase<Mode>;
 #[doc(hidden)]
 pub type Modifier<Mode> = Lowercase<Mode>;
 
+#[derive(Debug, thiserror::Error, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
+pub enum Error {
+	#[error("expected lowercase character at position {position}")]
+	Lowercase { position: usize },
+}
+
+impl Error {
+	#[must_use]
+	pub fn code(&self) -> &'static str {
+		match self {
+			Self::Lowercase { .. } => "lowercase",
+		}
+	}
+
+	#[cfg(feature = "alloc")]
+	#[must_use]
+	pub fn message(&self) -> Cow<'static, str> {
+		match self {
+			Self::Lowercase { position } => {
+				format!("expected lowercase character at position {position}")
+			}
+		}
+		.into()
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn message(&self) -> &'static str {
+		match self {
+			Self::Lowercase { .. } => "expected lowercase character",
+		}
+	}
+}
+
 pub struct Ascii;
 
 /// Rule and modifier for ensuring that a string is entirely lowercase.
@@ -74,7 +109,7 @@ where
 
 		for (idx, ch) in string.chars().enumerate() {
 			if !ch.is_lowercase() && !ch.is_whitespace() {
-				return Err(Error::Lowercase { position: idx });
+				return Err(Error::Lowercase { position: idx }.into());
 			}
 		}
 
@@ -94,7 +129,7 @@ where
 
 		for (idx, ch) in string.chars().enumerate() {
 			if !ch.is_ascii_lowercase() && !ch.is_ascii_whitespace() {
-				return Err(Error::Lowercase { position: idx });
+				return Err(Error::Lowercase { position: idx }.into());
 			}
 		}
 

@@ -26,6 +26,40 @@ pub enum Error {
 	ShouldNotEndWithSlice { value: ItemSlice },
 }
 
+impl Error {
+	#[must_use]
+	pub fn code(&self) -> &'static str {
+		match self {
+			Self::ShouldEndWith { .. } => "should_end_with",
+			Self::ShouldNotEndWith { .. } => "should_not_end_with",
+			Self::ShouldEndWithSlice { .. } => "should_end_with_slice",
+			Self::ShouldNotEndWithSlice { .. } => "should_not_end_with_slice",
+		}
+	}
+
+	#[cfg(feature = "alloc")]
+	#[must_use]
+	pub fn message(&self) -> Cow<'static, str> {
+		match self {
+			Self::ShouldEndWith { value } => format!("expected to end with {value}"),
+			Self::ShouldNotEndWith { value } => format!("expected to not end with {value}"),
+			Self::ShouldEndWithSlice { value } => format!("expected to end with {value:?}"),
+			Self::ShouldNotEndWithSlice { value } => format!("expected to not end with {value:?}"),
+		}
+		.into()
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn message(&self) -> &'static str {
+		match self {
+			Self::ShouldEndWith { .. } => "expected to end with",
+			Self::ShouldNotEndWith { .. } => "expected to not end with",
+			Self::ShouldEndWithSlice { .. } => "expected to end with",
+			Self::ShouldNotEndWithSlice { .. } => "expected to not end with",
+		}
+	}
+}
+
 pub struct Str;
 pub struct Slice;
 pub struct Not;
@@ -135,7 +169,12 @@ where
 		if inner.ends_with(suffix) {
 			Ok(())
 		} else {
-			Err(Error::ShouldEndWithSlice { value: DebugDisplay(&self.suffix).to_string() }.into())
+			Err(
+				Error::ShouldEndWithSlice {
+					value: DebugDisplay(&self.suffix).to_string(),
+				}
+				.into(),
+			)
 		}
 	}
 }
@@ -154,7 +193,12 @@ where
 		let suffix = self.suffix.as_slice();
 
 		if inner.ends_with(suffix) {
-			Err(Error::ShouldNotEndWithSlice { value: DebugDisplay(&self.suffix).to_string() }.into())
+			Err(
+				Error::ShouldNotEndWithSlice {
+					value: DebugDisplay(&self.suffix).to_string(),
+				}
+				.into(),
+			)
 		} else {
 			Ok(())
 		}

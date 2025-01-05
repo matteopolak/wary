@@ -31,6 +31,42 @@ pub enum Error {
 	ShouldNotStartWithSlice { value: ItemSlice },
 }
 
+impl Error {
+	#[must_use]
+	pub fn code(&self) -> &'static str {
+		match self {
+			Self::ShouldStartWith { .. } => "should_start_with",
+			Self::ShouldNotStartWith { .. } => "should_not_start_with",
+			Self::ShouldStartWithSlice { .. } => "should_start_with_slice",
+			Self::ShouldNotStartWithSlice { .. } => "should_not_start_with_slice",
+		}
+	}
+
+	#[cfg(feature = "alloc")]
+	#[must_use]
+	pub fn message(&self) -> Cow<'static, str> {
+		match self {
+			Self::ShouldStartWith { value } => format!("expected to start with {value}"),
+			Self::ShouldNotStartWith { value } => format!("expected to not start with {value}"),
+			Self::ShouldStartWithSlice { value } => format!("expected to start with {value:?}"),
+			Self::ShouldNotStartWithSlice { value } => {
+				format!("expected to not start with {value:?}")
+			}
+		}
+		.into()
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn message(&self) -> &'static str {
+		match self {
+			Self::ShouldStartWith { .. } => "expected to start with",
+			Self::ShouldNotStartWith { .. } => "expected to not start with",
+			Self::ShouldStartWithSlice { .. } => "expected to start with",
+			Self::ShouldNotStartWithSlice { .. } => "expected to not start with",
+		}
+	}
+}
+
 /// Rule for prefix validation.
 ///
 /// # Example

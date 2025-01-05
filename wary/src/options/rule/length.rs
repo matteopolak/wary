@@ -11,18 +11,66 @@ pub type Rule<Mode> = LengthRule<Mode>;
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
 pub enum Error {
-	#[error("Expected length of at least {min}, found {actual}")]
+	#[error("expected length of at least {min}, found {actual}")]
 	TooShort {
 		min: usize,
 		actual: usize,
 		exclusive: bool,
 	},
-	#[error("Expected length of at most {max}, found {actual}")]
+	#[error("expected length of at most {max}, found {actual}")]
 	TooLong {
 		max: usize,
 		actual: usize,
 		exclusive: bool,
 	},
+}
+
+impl Error {
+	#[must_use]
+	pub fn code(&self) -> &'static str {
+		match self {
+			Self::TooShort { .. } => "too_short",
+			Self::TooLong { .. } => "too_long",
+		}
+	}
+
+	#[cfg(feature = "alloc")]
+	#[must_use]
+	pub fn message(&self) -> Cow<'static, str> {
+		match self {
+			Self::TooShort {
+				min,
+				actual,
+				exclusive,
+			} => {
+				if *exclusive {
+					format!("expected length of more than {min}, found {actual}")
+				} else {
+					format!("expected length of at least {min}, found {actual}")
+				}
+			}
+			Self::TooLong {
+				max,
+				actual,
+				exclusive,
+			} => {
+				if *exclusive {
+					format!("expected length of less than {max}, found {actual}")
+				} else {
+					format!("expected length of at most {max}, found {actual}")
+				}
+			}
+		}
+		.into()
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn message(&self) -> &'static str {
+		match self {
+			Self::TooShort { .. } => "expected length of at least",
+			Self::TooLong { .. } => "expected length of at most",
+		}
+	}
 }
 
 /// Rule for length validation.

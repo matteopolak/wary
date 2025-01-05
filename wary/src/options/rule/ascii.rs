@@ -7,6 +7,39 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule = AsciiRule;
 
+#[derive(Debug, thiserror::Error, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
+pub enum Error {
+	#[error("expected ascii")]
+	Ascii,
+}
+
+impl Error {
+	#[must_use]
+	pub fn code(&self) -> &'static str {
+		match self {
+			Self::Ascii => "ascii",
+		}
+	}
+
+	#[cfg(feature = "alloc")]
+	#[must_use]
+	pub fn message(&self) -> Cow<'static, str> {
+		match self {
+			Self::Ascii => "expected ASCII",
+		}
+		.into()
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn message(&self) -> &'static str {
+		match self {
+			Self::Ascii => "expected ASCII",
+		}
+	}
+}
+
 /// Rule for ASCII validation.
 ///
 /// # Example
@@ -53,7 +86,7 @@ where
 		if string.is_ascii() {
 			Ok(())
 		} else {
-			Err(Error::Ascii)
+			Err(Error::Ascii.into())
 		}
 	}
 }

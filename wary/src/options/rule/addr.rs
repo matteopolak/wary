@@ -21,6 +21,37 @@ pub enum Error {
 	InvalidIpv6,
 }
 
+impl Error {
+	#[must_use]
+	pub fn code(&self) -> &'static str {
+		match self {
+			Self::InvalidIp => "invalid_ip",
+			Self::InvalidIpv4 => "invalid_ipv4",
+			Self::InvalidIpv6 => "invalid_ipv6",
+		}
+	}
+
+	#[cfg(feature = "alloc")]
+	#[must_use]
+	pub fn message(&self) -> Cow<'static, str> {
+		match self {
+			Self::InvalidIp => "invalid IP address",
+			Self::InvalidIpv4 => "invalid IPv4 address",
+			Self::InvalidIpv6 => "invalid IPv6 address",
+		}
+		.into()
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn message(&self) -> &'static str {
+		match self {
+			Self::InvalidIp => "invalid IP address",
+			Self::InvalidIpv4 => "invalid IPv4 address",
+			Self::InvalidIpv6 => "invalid IPv6 address",
+		}
+	}
+}
+
 pub struct Ip;
 pub struct IpV4;
 pub struct IpV6;

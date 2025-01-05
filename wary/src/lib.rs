@@ -6,7 +6,11 @@
 	clippy::print_stderr,
 	clippy::panic
 )]
-#![allow(clippy::new_without_default, clippy::wildcard_imports)]
+#![allow(
+	clippy::new_without_default,
+	clippy::wildcard_imports,
+	clippy::enum_glob_use
+)]
 #![cfg_attr(test, allow(non_upper_case_globals))]
 
 #[cfg(feature = "axum")]

@@ -11,9 +11,35 @@ use crate::toolbox::rule::*;
 pub type Rule<M> = RegexRule<M>;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
 pub enum Error {
 	#[error("value does not match pattern {pattern}")]
 	NoMatch { pattern: &'static str },
+}
+
+impl Error {
+	#[must_use]
+	pub fn code(&self) -> &'static str {
+		match self {
+			Self::NoMatch { .. } => "no_match",
+		}
+	}
+
+	#[cfg(feature = "alloc")]
+	#[must_use]
+	pub fn message(&self) -> Cow<'static, str> {
+		match self {
+			Self::NoMatch { pattern } => format!("value does not match pattern {pattern}").into(),
+		}
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn message(&self) -> &'static str {
+		match self {
+			Self::NoMatch { .. } => "value does not match pattern",
+		}
+	}
 }
 
 /// Rule for validating a value against a regular expression.

@@ -145,7 +145,10 @@ impl<'l> IntoIterator for &'l Path {
 
 #[cfg(all(feature = "serde", feature = "alloc"))]
 impl serde::Serialize for Path {
-	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
 		use serde::ser::SerializeSeq;
 
 		let elems = self.clone().collect();
@@ -161,7 +164,10 @@ impl serde::Serialize for Path {
 
 #[cfg(all(feature = "serde", not(feature = "alloc")))]
 impl serde::Serialize for Path {
-	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: serde::Serializer {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
 		use serde::ser::SerializeSeq;
 
 		serializer.serialize_seq(Some(0))?.end()

@@ -17,6 +17,33 @@ pub enum Error {
 	CannotBeEmpty,
 }
 
+impl Error {
+	#[must_use]
+	pub fn code(&self) -> &'static str {
+		match self {
+			Self::ShouldBeEmpty => "should_be_empty",
+			Self::CannotBeEmpty => "cannot_be_empty",
+		}
+	}
+
+	#[cfg(feature = "alloc")]
+	#[must_use]
+	pub fn message(&self) -> Cow<'static, str> {
+		match self {
+			Self::ShouldBeEmpty => "value should be empty".into(),
+			Self::CannotBeEmpty => "value should not be empty".into(),
+		}
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn message(&self) -> &'static str {
+		match self {
+			Self::ShouldBeEmpty => "value should be empty",
+			Self::CannotBeEmpty => "value should not be empty",
+		}
+	}
+}
+
 pub struct Not;
 
 /// Rule for requring a value to be empty or not empty.

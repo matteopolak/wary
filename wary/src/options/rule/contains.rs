@@ -29,6 +29,44 @@ pub enum Error {
 	ShouldNotContainSlice { position: usize, value: ItemSlice },
 }
 
+impl Error {
+	#[must_use]
+	pub fn code(&self) -> &'static str {
+		match self {
+			Self::ShouldContain { .. } => "should_contain",
+			Self::ShouldNotContain { .. } => "should_not_contain",
+			Self::ShouldContainSlice { .. } => "should_contain_slice",
+			Self::ShouldNotContainSlice { .. } => "should_not_contain_slice",
+		}
+	}
+
+	#[cfg(feature = "alloc")]
+	#[must_use]
+	pub fn message(&self) -> Cow<'static, str> {
+		match self {
+			Self::ShouldContain { value } => format!("expected to contain {value}"),
+			Self::ShouldNotContain { position, value } => {
+				format!("found unexpected value at position {position}: {value}")
+			}
+			Self::ShouldContainSlice { value } => format!("expected to contain {value:?}"),
+			Self::ShouldNotContainSlice { position, value } => {
+				format!("found unexpected value at position {position}: {value:?}")
+			}
+		}
+		.into()
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn message(&self) -> &'static str {
+		match self {
+			Self::ShouldContain { .. } => "expected to contain",
+			Self::ShouldNotContain { .. } => "found unexpected value",
+			Self::ShouldContainSlice { .. } => "expected to contain",
+			Self::ShouldNotContainSlice { .. } => "found unexpected value",
+		}
+	}
+}
+
 pub struct InOrder;
 pub struct AnyOrder;
 pub struct InOrderNot;
