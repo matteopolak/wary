@@ -5,7 +5,7 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::punctuated::Punctuated;
 
-use crate::wary::{modify::ModifyFieldWrapper, validate::ValidateFieldWrapper};
+use crate::wary::{transform::TransformFieldWrapper, validate::ValidateFieldWrapper};
 
 pub type Map<K, V> = VecMap<K, V>;
 
@@ -310,7 +310,7 @@ impl Identify for ValidateFieldWrapper {
 	}
 }
 
-impl Identify for ModifyFieldWrapper {
+impl Identify for TransformFieldWrapper {
 	fn ident(&self) -> Option<&syn::Ident> {
 		self.ident.as_ref()
 	}

@@ -3,7 +3,7 @@ mod test {
 	use crate::toolbox::test::*;
 
 	#[test]
-	fn test_func_modifier() {
+	fn test_func_transformer() {
 		#[allow(clippy::trivially_copy_pass_by_ref)]
 		fn change(_ctx: &(), name: &mut String) {
 			name.clear();
@@ -13,12 +13,12 @@ mod test {
 		#[derive(Wary)]
 		#[wary(crate = "crate")]
 		struct Name {
-			#[modify(func = |ctx: &(), name: &mut String| {
+			#[transform(func = |ctx: &(), name: &mut String| {
 				name.clear();
 				name.push_str("hello, world!");
 			})]
 			left: String,
-			#[modify(func = change)]
+			#[transform(func = change)]
 			right: String,
 		}
 
@@ -27,7 +27,7 @@ mod test {
 			right: "HelloWorld".into(),
 		};
 
-		name.modify(&());
+		name.transform(&());
 
 		assert_eq!(name.left, "hello, world!");
 		assert_eq!(name.right, "hello, world!");

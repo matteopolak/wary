@@ -4,9 +4,9 @@ use quote::{format_ident, quote};
 use crate::util::{Args, Field, Map};
 
 #[derive(FromDeriveInput)]
-#[darling(attributes(modify))]
-pub struct Modify {
-	pub data: ast::Data<ModifyVariant, ModifyFieldWrapper>,
+#[darling(attributes(transform))]
+pub struct Transform {
+	pub data: ast::Data<TransformVariant, TransformFieldWrapper>,
 
 	#[darling(multiple)]
 	pub func: Vec<syn::Expr>,
@@ -15,20 +15,20 @@ pub struct Modify {
 	pub custom: Map<syn::Path, Option<Args>>,
 }
 
-pub struct ModifyOptions {
+pub struct TransformOptions {
 	pub func: Vec<syn::Expr>,
 	pub custom: Map<syn::Path, Option<Args>>,
 }
 
 #[derive(Debug, FromVariant)]
-pub struct ModifyVariant {
+pub struct TransformVariant {
 	pub ident: syn::Ident,
-	pub fields: ast::Fields<ModifyFieldWrapper>,
+	pub fields: ast::Fields<TransformFieldWrapper>,
 }
 
 #[derive(Debug, FromField)]
-#[darling(attributes(modify))]
-pub struct ModifyFieldWrapper {
+#[darling(attributes(transform))]
+pub struct TransformFieldWrapper {
 	pub ident: Option<syn::Ident>,
 	pub ty: syn::Type,
 
@@ -39,7 +39,7 @@ pub struct ModifyFieldWrapper {
 	custom: Map<syn::Path, Option<Args>>,
 
 	#[darling(default)]
-	inner: Option<Box<ModifyField>>,
+	inner: Option<Box<TransformField>>,
 
 	dive: darling::util::Flag,
 
@@ -48,7 +48,7 @@ pub struct ModifyFieldWrapper {
 }
 
 #[derive(Debug, FromMeta)]
-struct ModifyField {
+struct TransformField {
 	#[darling(multiple)]
 	func: Vec<syn::Expr>,
 
@@ -56,7 +56,7 @@ struct ModifyField {
 	custom: Map<syn::Path, Option<Args>>,
 
 	#[darling(default)]
-	inner: Option<Box<ModifyField>>,
+	inner: Option<Box<TransformField>>,
 
 	dive: darling::util::Flag,
 
@@ -64,9 +64,9 @@ struct ModifyField {
 	builtin: Map<syn::Path, Option<Args>>,
 }
 
-impl ModifyFieldWrapper {
-	fn into_inner(self) -> ModifyField {
-		ModifyField {
+impl TransformFieldWrapper {
+	fn into_inner(self) -> TransformField {
+		TransformField {
 			func: self.func,
 			custom: self.custom,
 			inner: self.inner,
@@ -76,7 +76,7 @@ impl ModifyFieldWrapper {
 	}
 }
 
-impl ModifyFieldWrapper {
+impl TransformFieldWrapper {
 	pub fn into_token_stream(
 		self,
 		crate_name: &syn::Path,
@@ -89,13 +89,13 @@ impl ModifyFieldWrapper {
 	}
 }
 
-impl ModifyOptions {
+impl TransformOptions {
 	pub fn into_token_stream(
 		self,
 		crate_name: &syn::Path,
 		ty: &syn::Type,
 	) -> proc_macro2::TokenStream {
-		ModifyField {
+		TransformField {
 			func: self.func,
 			custom: self.custom,
 			inner: None,
@@ -111,7 +111,7 @@ impl ModifyOptions {
 	}
 }
 
-impl ModifyField {
+impl TransformField {
 	#[allow(clippy::wrong_self_convention)]
 	fn to_token_stream(
 		&mut self,
@@ -125,8 +125,8 @@ impl ModifyField {
 
 		for (path, args) in self.builtin.iter_mut() {
 			tokens.extend(quote! {
-				#crate_name::Modifier::modify(
-					&#crate_name::options::modifier::#path::Modifier::new() #args,
+				#crate_name::Transformer::transform(
+					&#crate_name::options::transformer::#path::Transformer::new() #args,
 					&(),
 					#field
 				);
@@ -153,8 +153,8 @@ impl ModifyField {
 
 		for (path, args) in self.custom.iter() {
 			tokens.extend(quote! {
-				#crate_name::Modifier::modify(
-					&modifier::#path::new() #args,
+				#crate_name::Transformer::transform(
+					&transformer::#path::new() #args,
 					ctx,
 					#field
 				);
@@ -163,7 +163,7 @@ impl ModifyField {
 
 		if self.dive.is_present() {
 			tokens.extend(quote! {
-				#crate_name::Modify::modify(#field, ctx);
+				#crate_name::Transform::transform(#field, ctx);
 			});
 		}
 

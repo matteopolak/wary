@@ -2,34 +2,34 @@
 mod test {
 	use crate::toolbox::test::*;
 
-	struct SecretModifier;
+	struct SecretTransformer;
 
-	impl SecretModifier {
+	impl SecretTransformer {
 		const fn new() -> Self {
 			Self
 		}
 	}
 
-	impl Modifier<String> for SecretModifier {
+	impl Transformer<String> for SecretTransformer {
 		type Context = ();
 
-		fn modify(&self, _ctx: &Self::Context, item: &mut String) {
+		fn transform(&self, _ctx: &Self::Context, item: &mut String) {
 			item.clear();
 			item.push_str("secret");
 		}
 	}
 
 	#[allow(non_camel_case_types)]
-	mod modifier {
-		pub type secret = super::SecretModifier;
+	mod transformer {
+		pub type secret = super::SecretTransformer;
 	}
 
 	#[test]
-	fn test_custom_modifier() {
+	fn test_custom_transformer() {
 		#[derive(Wary)]
 		#[wary(crate = "crate")]
 		struct Person {
-			#[modify(custom(secret))]
+			#[transform(custom(secret))]
 			name: String,
 		}
 
@@ -37,7 +37,7 @@ mod test {
 			name: "hello".into(),
 		};
 
-		person.modify(&());
+		person.transform(&());
 
 		assert_eq!(person.name, "secret");
 	}

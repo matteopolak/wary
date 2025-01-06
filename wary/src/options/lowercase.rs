@@ -1,4 +1,4 @@
-//! Rule and modifier for ensuring that a string is entirely lowercase.
+//! Rule and transformer for ensuring that a string is entirely lowercase.
 //!
 //! See [`Lowercase`] for more information.
 
@@ -7,7 +7,7 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule<Mode> = Lowercase<Mode>;
 #[doc(hidden)]
-pub type Modifier<Mode> = Lowercase<Mode>;
+pub type Transformer<Mode> = Lowercase<Mode>;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -46,7 +46,7 @@ impl Error {
 
 pub struct Ascii;
 
-/// Rule and modifier for ensuring that a string is entirely lowercase.
+/// Rule and transformer for ensuring that a string is entirely lowercase.
 ///
 /// # Example
 ///
@@ -59,7 +59,7 @@ pub struct Ascii;
 ///   name: String,
 ///   #[validate(lowercase(ascii))]
 ///   greeting: String,
-///   #[modify(lowercase)]
+///   #[transform(lowercase)]
 ///   message: String,
 /// }
 ///
@@ -87,7 +87,7 @@ impl Lowercase<Unset> {
 	///
 	/// Ensures that the input is entirely lowercase in ascii.
 	///
-	/// # Modifier
+	/// # Transformer
 	///
 	/// Uses [`str::make_ascii_lowercase`] to convert in-place instead
 	/// of requiring a new allocation with [`str::to_lowercase`].
@@ -138,23 +138,23 @@ where
 }
 
 #[cfg(feature = "alloc")]
-impl crate::Modifier<String> for Lowercase<Unset> {
+impl crate::Transformer<String> for Lowercase<Unset> {
 	type Context = ();
 
 	#[inline]
-	fn modify(&self, _ctx: &Self::Context, item: &mut String) {
+	fn transform(&self, _ctx: &Self::Context, item: &mut String) {
 		*item = item.to_lowercase();
 	}
 }
 
-impl<I> crate::Modifier<I> for Lowercase<Ascii>
+impl<I> crate::Transformer<I> for Lowercase<Ascii>
 where
 	I: AsMut<str>,
 {
 	type Context = ();
 
 	#[inline]
-	fn modify(&self, _ctx: &Self::Context, item: &mut I) {
+	fn transform(&self, _ctx: &Self::Context, item: &mut I) {
 		item.as_mut().make_ascii_lowercase();
 	}
 }
@@ -183,17 +183,17 @@ mod test {
 	}
 
 	#[test]
-	fn test_lowercase_modifier() {
+	fn test_lowercase_transformer() {
 		let rule = Lowercase::new();
 		let mut input = "ὈΔΥΣΣΕΎΣ HELLO".to_string();
 
-		rule.modify(&(), &mut input);
+		rule.transform(&(), &mut input);
 		assert_eq!(input, "ὀδυσσεύς hello");
 
 		let rule = Lowercase::new().ascii();
 		let mut input = "ßeLLO".to_string();
 
-		rule.modify(&(), &mut input);
+		rule.transform(&(), &mut input);
 		assert_eq!(input, "ßello");
 	}
 }

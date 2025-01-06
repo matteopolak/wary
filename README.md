@@ -14,8 +14,8 @@ An optionally `no_std` and `no_alloc` validation and transformation library.
   - [Implementing custom `Rule`s](#rule-custom)
   - [Implementing `Validate` manually](#manual-validate)
 - [Transformation rules](#transformation-rules)
-  - [Implementing custom `Modifier`s](#modifier-custom)
-  - [Implementing `Modify` manually](#manual-modify)
+  - [Implementing custom `Transformer`s](#transformer-custom)
+  - [Implementing `Transform` manually](#manual-transform)
 
 ### Basic struct example
 
@@ -56,7 +56,7 @@ use wary::Wary;
 #[derive(Wary)]
 struct Name<'n>(
   #[validate(alphanumeric, length(chars, 5..=20), equals(not, other = "john"))]
-  #[modify(lowercase(ascii))]
+  #[transform(lowercase(ascii))]
   &'n mut str
 );
 
@@ -692,55 +692,55 @@ assert!(longer.validate(&()).is_ok());
 
 ## Transformation rules
 
-Transformation rules are applied similarly to validation rules, but are implemented in the [`Modify`](wary::Modify) trait instead.
+Transformation rules are applied similarly to validation rules, but are implemented in the [`Transform`](wary::Transform) trait instead.
 
 | rule | trait | feature | dependency |
 | ---- | ----- | ------- | ---------- |
-| [`custom`](#modifier-custom) | [`Modifier`](wary::Modifier) | - | - |
-| [`dive`](#modifier-dive) | [`Modify`](wary::Modify) | - | - |
-| [`lowercase`](#modifier-lowercase) | [`AsMut<str>`](wary::AsMut) (for `ascii` only) | - | - |
-| [`inner`](#modifier-inner) | [`AsMutSlice`](wary::AsMutSlice) | - | - |
-| [`uppercase`](#modifier-uppercase) | [`AsMut<str>`](wary::AsMut) (for `ascii` only) | - | - |
+| [`custom`](#transformer-custom) | [`Transformer`](wary::Transformer) | - | - |
+| [`dive`](#transformer-dive) | [`Transform`](wary::Transform) | - | - |
+| [`lowercase`](#transformer-lowercase) | [`AsMut<str>`](wary::AsMut) (for `ascii` only) | - | - |
+| [`inner`](#transformer-inner) | [`AsMutSlice`](wary::AsMutSlice) | - | - |
+| [`uppercase`](#transformer-uppercase) | [`AsMut<str>`](wary::AsMut) (for `ascii` only) | - | - |
 
-### `custom` <a id="modifier-custom"></a>
+### `custom` <a id="transformer-custom"></a>
 
-Transforms the input with a custom [`Modifier`](wary::Modifier).
+Transforms the input with a custom [`Transformer`](wary::transformer).
 
 ```rust
-use wary::{Wary, Modifier};
+use wary::{Wary, Transformer};
 
-struct SecretModifier;
+struct SecretTransformer;
 
-impl SecretModifier {
+impl SecretTransformer {
   fn new() -> Self {
     Self
   }
 }
 
-impl Modifier<String> for SecretModifier {
+impl Transformer<String> for SecretTransformer {
   type Context = ();
 
-  fn modify(&self, _ctx: &Self::Context, item: &mut String) {
+  fn transform(&self, _ctx: &Self::Context, item: &mut String) {
     item.clear();
     item.push_str("secret");
   }
 }
 
 #[allow(non_camel_case_types)]
-mod modifier {
-  pub type secret = super::SecretModifier;
+mod transformer {
+  pub type secret = super::SecretTransformer;
 }
 
 #[derive(Wary)]
 struct Person {
-  #[modify(custom(secret))]
+  #[transform(custom(secret))]
   name: String,
 }
 
 # fn main() {}
 ```
 
-### `dive` <a id="modifier-dive"></a>
+### `dive` <a id="transformer-dive"></a>
 
 Transforms the inner fields of a struct or enum.
 
@@ -749,18 +749,18 @@ use wary::Wary;
 
 #[derive(Wary)]
 struct Item {
-  #[modify(lowercase)]
+  #[transform(lowercase)]
   name: String,
 }
 
 #[derive(Wary)]
 struct Name {
-  #[modify(dive)]
+  #[transform(dive)]
   item: Item,
 }
 ```
 
-### `lowercase` <a id="modifier-lowercase"></a>
+### `lowercase` <a id="transformer-lowercase"></a>
 
 Transforms the input to lowercase.
 
@@ -769,14 +769,14 @@ use wary::Wary;
 
 #[derive(Wary)]
 struct Name {
-  #[modify(lowercase)]
+  #[transform(lowercase)]
   left: String,
-  #[modify(lowercase(ascii))]
+  #[transform(lowercase(ascii))]
   right: String,
 }
 ```
 
-### `inner` <a id="modifier-inner"></a>
+### `inner` <a id="transformer-inner"></a>
 
 Transforms the inner fields of a slice-like type.
 
@@ -785,12 +785,12 @@ use wary::Wary;
 
 #[derive(Wary)]
 struct Name {
-  #[modify(inner(lowercase))]
+  #[transform(inner(lowercase))]
   items: Vec<String>,
 }
 ```
 
-### `uppercase` <a id="modifier-uppercase"></a>
+### `uppercase` <a id="transformer-uppercase"></a>
 
 Transforms the input to uppercase.
 
@@ -799,26 +799,26 @@ use wary::Wary;
 
 #[derive(Wary)]
 struct Name {
-  #[modify(uppercase)]
+  #[transform(uppercase)]
   left: String,
-  #[modify(uppercase(ascii))]
+  #[transform(uppercase(ascii))]
   right: String,
 }
 ```
 
-### Implementing `Modify` manually <a id="manual-modify"></a>
+### Implementing `Transform` manually <a id="manual-transform"></a>
 
 ```rust
-use wary::Modify;
+use wary::Transform;
 
 struct Name {
   value: String,
 }
 
-impl Modify for Name {
+impl Transform for Name {
   type Context = ();
 
-  fn modify(&mut self, _ctx: &Self::Context) {
+  fn transform(&mut self, _ctx: &Self::Context) {
     self.value.make_ascii_lowercase();
   }
 }
@@ -827,7 +827,7 @@ let mut name = Name {
   value: "Jane".to_string(),
 };
 
-name.modify(&());
+name.transform(&());
 
 assert_eq!(name.value, "jane");
 ```

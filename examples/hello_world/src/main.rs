@@ -1,8 +1,8 @@
-use wary::{Modify, Wary};
+use wary::{Transform, Wary};
 
 #[derive(Wary, Debug)]
 struct Item {
-	#[modify(inner(lowercase))]
+	#[transform(inner(lowercase))]
 	name: Vec<String>,
 }
 
@@ -11,7 +11,7 @@ fn main() {
 		name: vec!["Hello".into(), "World".into()],
 	};
 
-	item.modify(&());
+	item.transform(&());
 
 	assert_eq!(item.name, vec!["hello", "world"]);
 }

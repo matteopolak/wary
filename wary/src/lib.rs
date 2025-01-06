@@ -85,46 +85,47 @@ pub mod toolbox {
 
 	#[allow(unused_imports)]
 	pub(crate) mod test {
-		pub use crate::{toolbox::rule::*, Modifier, Modify, Rule, Validate, Wary};
+		pub use crate::{toolbox::rule::*, Rule, Transform, Transformer, Validate, Wary};
 	}
 }
 
-/// Trait for validating and modifying data.
+/// Trait for validating and transforming data.
 ///
-/// This is a simple wrapper around types that are [`Validate`] and [`Modify`],
-/// first validating the type then modifying if validation returned no errors.
-pub trait Wary<C>: Validate<Context = C> + Modify<Context = C> {
+/// This is a simple wrapper around types that are [`Validate`] and
+/// [`Transform`], first validating the type then transforming if validation
+/// returned no errors.
+pub trait Wary<C>: Validate<Context = C> + Transform<Context = C> {
 	/// Validates with [`Validate::validate`], then (if successful) modifies with
-	/// [`Modify::modify`].
+	/// [`Transform::transform`].
 	///
 	/// # Errors
 	///
 	/// Forwards any errors from [`Validate::validate`].
 	fn wary(&mut self, ctx: &C) -> Result<(), Report> {
 		self.validate(ctx)?;
-		self.modify(ctx);
+		self.transform(ctx);
 		Ok(())
 	}
 }
 
-impl<T, C> Wary<C> for T where T: Validate<Context = C> + Modify<Context = C> {}
+impl<T, C> Wary<C> for T where T: Validate<Context = C> + Transform<Context = C> {}
 
-/// Trait for modifying other data.
-pub trait Modifier<I: ?Sized> {
-	/// Additional context required to modify the input.
+/// Trait for transforming other data.
+pub trait Transformer<I: ?Sized> {
+	/// Additional context required to transform the input.
 	type Context;
 
-	/// Modify the input.
-	fn modify(&self, ctx: &Self::Context, item: &mut I);
+	/// Transform the input.
+	fn transform(&self, ctx: &Self::Context, item: &mut I);
 }
 
-/// Trait for modifying itself.
-pub trait Modify {
-	/// Additional context required to modify itself.
+/// Trait for transforming itself.
+pub trait Transform {
+	/// Additional context required to transform itself.
 	type Context;
 
-	/// Modify itself.
-	fn modify(&mut self, ctx: &Self::Context);
+	/// Transform itself.
+	fn transform(&mut self, ctx: &Self::Context);
 }
 
 /// Trait for validating other data.
@@ -142,7 +143,7 @@ pub trait Rule<I: ?Sized> {
 
 /// Trait for validating itself.
 pub trait Validate {
-	/// Additional context required to validate or modify the input.
+	/// Additional context required to validate itself.
 	type Context;
 
 	/// Validates itself and appends all errors to the attached [`Report`].

@@ -3,11 +3,11 @@ mod test {
 	use crate::toolbox::test::*;
 
 	#[test]
-	fn test_inner_modifier() {
+	fn test_inner_transformer() {
 		#[derive(Wary)]
 		#[wary(crate = "crate")]
 		struct Item {
-			#[modify(inner(lowercase))]
+			#[transform(inner(lowercase))]
 			name: Vec<String>,
 		}
 
@@ -15,7 +15,7 @@ mod test {
 			name: vec!["Hello".into(), "World".into()],
 		};
 
-		item.modify(&());
+		item.transform(&());
 
 		assert_eq!(item.name, vec!["hello", "world"]);
 	}

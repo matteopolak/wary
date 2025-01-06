@@ -3,18 +3,18 @@ mod test {
 	use crate::toolbox::test::*;
 
 	#[test]
-	fn test_dive_modifier() {
+	fn test_dive_transformer() {
 		#[derive(Wary)]
 		#[wary(crate = "crate")]
 		struct Item {
-			#[modify(lowercase)]
+			#[transform(lowercase)]
 			name: String,
 		}
 
 		#[derive(Wary)]
 		#[wary(crate = "crate")]
 		struct Name {
-			#[modify(dive)]
+			#[transform(dive)]
 			item: Item,
 		}
 
@@ -24,7 +24,7 @@ mod test {
 			},
 		};
 
-		name.modify(&());
+		name.transform(&());
 
 		assert_eq!(name.item.name, "hello");
 	}

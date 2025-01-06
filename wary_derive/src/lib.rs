@@ -12,7 +12,7 @@ pub(crate) fn default_crate_name() -> syn::Path {
 	syn::parse_quote! { ::wary }
 }
 
-#[proc_macro_derive(Wary, attributes(validate, modify, wary, serde))]
+#[proc_macro_derive(Wary, attributes(validate, transform, wary, serde))]
 pub fn wary(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 	let input = syn::parse_macro_input!(input as syn::DeriveInput);
 

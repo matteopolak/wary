@@ -3,7 +3,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 
 use super::{
-	modify::{Modify, ModifyFieldWrapper, ModifyOptions, ModifyVariant},
+	transform::{Transform, TransformFieldWrapper, TransformOptions, TransformVariant},
 	validate::{Validate, ValidateFieldWrapper, ValidateOptions, ValidateVariant},
 };
 use crate::util::Fields;
@@ -65,41 +65,41 @@ pub struct Options {
 pub struct Emit {
 	options: Options,
 	validate: Validate,
-	modify: Modify,
+	transform: Transform,
 }
 
 impl Emit {
 	pub fn into_token_stream(self) -> TokenStream {
-		match (self.validate.data, self.modify.data) {
-			(ast::Data::Enum(validate), ast::Data::Enum(modify)) => EmitEnum {
+		match (self.validate.data, self.transform.data) {
+			(ast::Data::Enum(validate), ast::Data::Enum(transform)) => EmitEnum {
 				options: &self.options,
 				validate,
-				modify,
+				transform,
 				validate_top: ValidateOptions {
 					func: self.validate.func,
 					or: self.validate.or,
 					and: self.validate.and,
 					custom: self.validate.custom,
 				},
-				modify_top: ModifyOptions {
-					func: self.modify.func,
-					custom: self.modify.custom,
+				transform_top: TransformOptions {
+					func: self.transform.func,
+					custom: self.transform.custom,
 				},
 			}
 			.into_token_stream(),
-			(ast::Data::Struct(validate), ast::Data::Struct(modify)) => EmitStruct {
+			(ast::Data::Struct(validate), ast::Data::Struct(transform)) => EmitStruct {
 				options: &self.options,
 				validate,
-				modify,
+				transform,
 				validate_top: ValidateOptions {
 					func: self.validate.func,
 					or: self.validate.or,
 					and: self.validate.and,
 					custom: self.validate.custom,
 				},
-				modify_top: ModifyOptions {
-					func: self.modify.func,
-					custom: self.modify.custom,
+				transform_top: TransformOptions {
+					func: self.transform.func,
+					custom: self.transform.custom,
 				},
 			}
 			.into_token_stream(),
@@ -112,12 +112,12 @@ impl FromDeriveInput for Emit {
 	fn from_derive_input(input: &syn::DeriveInput) -> darling::Result<Self> {
 		let options = Options::from_derive_input(input)?;
 		let validate = Validate::from_derive_input(input)?;
-		let modify = Modify::from_derive_input(input)?;
+		let transform = Transform::from_derive_input(input)?;
 
 		Ok(Self {
 			options,
 			validate,
-			modify,
+			transform,
 		})
 	}
 }
@@ -125,9 +125,9 @@ impl FromDeriveInput for Emit {
 struct EmitEnum<'o> {
 	options: &'o Options,
 	validate: Vec<ValidateVariant>,
-	modify: Vec<ModifyVariant>,
+	transform: Vec<TransformVariant>,
 	validate_top: ValidateOptions,
-	modify_top: ModifyOptions,
+	transform_top: TransformOptions,
 }
 
 impl EmitEnum<'_> {
@@ -157,7 +157,7 @@ impl EmitEnum<'_> {
 			.validate_top
 			.into_token_stream(&self.options.crate_name, &syn::parse_quote!(#ident));
 
-		let modify = self.modify.into_iter().map(|m| {
+		let transform = self.transform.into_iter().map(|m| {
 			let destruct = Fields(&m.fields).destruct();
 			let ident = m.ident.clone();
 
@@ -176,8 +176,8 @@ impl EmitEnum<'_> {
 			}
 		});
 
-		let modify_top = self
-			.modify_top
+		let transform_top = self
+			.transform_top
 			.into_token_stream(&self.options.crate_name, &syn::parse_quote!(#ident));
 
 		let (imp, ty, wher) = self.options.generics.split_for_impl();
@@ -202,17 +202,17 @@ impl EmitEnum<'_> {
 			}
 
 			#[allow(warnings)]
-			impl #imp #crate_name::Modify for #ident #ty #wher {
+			impl #imp #crate_name::Transform for #ident #ty #wher {
 				type Context = #context;
 
-				fn modify(&mut self, ctx: &Self::Context) {
+				fn transform(&mut self, ctx: &Self::Context) {
 					match self {
 						#(
-							#modify
+							#transform
 						)*
 					};
 
-					#modify_top
+					#transform_top
 				}
 			}
 		}
@@ -222,9 +222,9 @@ impl EmitEnum<'_> {
 struct EmitStruct<'o> {
 	options: &'o Options,
 	validate: ast::Fields<ValidateFieldWrapper>,
-	modify: ast::Fields<ModifyFieldWrapper>,
+	transform: ast::Fields<TransformFieldWrapper>,
 	validate_top: ValidateOptions,
-	modify_top: ModifyOptions,
+	transform_top: TransformOptions,
 }
 
 impl EmitStruct<'_> {
@@ -243,14 +243,14 @@ impl EmitStruct<'_> {
 			.validate_top
 			.into_token_stream(&self.options.crate_name, &syn::parse_quote!(#ident));
 
-		let modify = self
-			.modify
+		let transform = self
+			.transform
 			.into_iter()
 			.zip(&idents)
 			.map(|(m, i)| m.into_token_stream(&self.options.crate_name, i));
 
-		let modify_top = self
-			.modify_top
+		let transform_top = self
+			.transform_top
 			.into_token_stream(&self.options.crate_name, &syn::parse_quote!(#ident));
 
 		let (imp, ty, wher) = self.options.generics.split_for_impl();
@@ -275,17 +275,17 @@ impl EmitStruct<'_> {
 			}
 
 			#[allow(warnings)]
-			impl #imp #crate_name::Modify for #ident #ty #wher {
+			impl #imp #crate_name::Transform for #ident #ty #wher {
 				type Context = #context;
 
-				fn modify(&mut self, ctx: &Self::Context) {
+				fn transform(&mut self, ctx: &Self::Context) {
 					let Self { #destruct } = self;
 
 					#(
-						#modify
+						#transform
 					)*
 
-					#modify_top
+					#transform_top
 				}
 			}
 		}

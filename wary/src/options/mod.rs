@@ -40,7 +40,7 @@ pub mod rule {
 	pub mod or;
 }
 
-pub mod modifier {
+pub mod transformer {
 	pub use super::{lowercase, uppercase};
 
 	#[cfg(feature = "alloc")]

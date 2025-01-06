@@ -48,24 +48,24 @@ where
 #[derive(Debug, Wary)]
 struct User {
 	#[validate(length(3..=16))]
-	#[modify(lowercase)]
+	#[transform(lowercase)]
 	username: String,
 	#[validate(custom(password))]
 	password: String,
 	#[validate(email)]
 	email: String,
 	#[validate(inner(dive), length(1..))]
-	#[modify(inner(dive))]
+	#[transform(inner(dive))]
 	posts: Vec<Post>,
 }
 
 #[derive(Debug, Wary)]
 struct Post {
 	#[validate(length(1..=128))]
-	#[modify(trim)]
+	#[transform(trim)]
 	title: String,
 	#[validate(length(1..=1024))]
-	#[modify(trim)]
+	#[transform(trim)]
 	content: String,
 	#[validate(or(equals(other = -5), range(0..)))]
 	likes: i64,

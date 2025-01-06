@@ -1,4 +1,4 @@
-//! Rule and modifier for ensuring that a string is entirely uppercase.
+//! Rule and transformer for ensuring that a string is entirely uppercase.
 //!
 //! See [`Uppercase`] for more information.
 
@@ -7,7 +7,7 @@ use crate::toolbox::rule::*;
 #[doc(hidden)]
 pub type Rule<Mode> = Uppercase<Mode>;
 #[doc(hidden)]
-pub type Modifier<Mode> = Uppercase<Mode>;
+pub type Transformer<Mode> = Uppercase<Mode>;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
@@ -46,7 +46,7 @@ impl Error {
 
 pub struct Ascii;
 
-/// Rule and modifier for ensuring that a string is entirely uppercase.
+/// Rule and transformer for ensuring that a string is entirely uppercase.
 ///
 /// # Example
 ///
@@ -59,7 +59,7 @@ pub struct Ascii;
 ///   name: String,
 ///   #[validate(uppercase(ascii))]
 ///   greeting: String,
-///   #[modify(uppercase)]
+///   #[transform(uppercase)]
 ///   message: String,
 /// }
 ///
@@ -87,7 +87,7 @@ impl Uppercase<Unset> {
 	///
 	/// Ensures that the input is entirely uppercase in ascii.
 	///
-	/// # Modifier
+	/// # Transformer
 	///
 	/// Uses [`str::make_ascii_uppercase`] to convert in-place instead
 	/// of requiring a new allocation with [`str::to_uppercase`].
@@ -138,23 +138,23 @@ where
 }
 
 #[cfg(feature = "alloc")]
-impl crate::Modifier<String> for Uppercase<Unset> {
+impl crate::Transformer<String> for Uppercase<Unset> {
 	type Context = ();
 
 	#[inline]
-	fn modify(&self, _ctx: &Self::Context, item: &mut String) {
+	fn transform(&self, _ctx: &Self::Context, item: &mut String) {
 		*item = item.to_uppercase();
 	}
 }
 
-impl<I> crate::Modifier<I> for Uppercase<Ascii>
+impl<I> crate::Transformer<I> for Uppercase<Ascii>
 where
 	I: AsMut<str>,
 {
 	type Context = ();
 
 	#[inline]
-	fn modify(&self, _ctx: &Self::Context, item: &mut I) {
+	fn transform(&self, _ctx: &Self::Context, item: &mut I) {
 		item.as_mut().make_ascii_uppercase();
 	}
 }
@@ -183,17 +183,17 @@ mod test {
 	}
 
 	#[test]
-	fn test_uppercase_modifier() {
+	fn test_uppercase_transformer() {
 		let rule = Uppercase::new();
 		let mut input = "ὀδυσσεύς hello".to_string();
 
-		rule.modify(&(), &mut input);
+		rule.transform(&(), &mut input);
 		assert_eq!(input, "ὈΔΥΣΣΕΎΣ HELLO");
 
 		let rule = Uppercase::new().ascii();
 		let mut input = "ὀδυσσεύς hello".to_string();
 
-		rule.modify(&(), &mut input);
+		rule.transform(&(), &mut input);
 		assert_eq!(input, "ὀδυσσεύς HELLO");
 	}
 }

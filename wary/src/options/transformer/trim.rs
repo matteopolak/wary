@@ -1,22 +1,22 @@
-//! Modifier for trimming whitespace from the ends of a string.
+//! Transformer for trimming whitespace from the ends of a string.
 
 use crate::toolbox::rule::*;
 
 #[doc(hidden)]
-pub type Modifier<Mode> = TrimModifier<Mode>;
+pub type Transformer<Mode> = TrimTransformer<Mode>;
 
 pub struct Ascii;
 
-/// Modifier for trimming whitespace from the ends of a string.
+/// Transformer for trimming whitespace from the ends of a string.
 ///
 /// # Example
 ///
 /// ```
-/// use wary::{Wary, Modify};
+/// use wary::{Wary, Transform};
 ///
 /// #[derive(Wary)]
 /// struct Person {
-///   #[modify(trim)]
+///   #[transform(trim)]
 ///   message: String,
 /// }
 ///
@@ -24,15 +24,15 @@ pub struct Ascii;
 ///   message: " hello ".into(),
 /// };
 ///
-/// person.modify(&());
+/// person.transform(&());
 /// assert_eq!(person.message, "hello");
 /// ```
 #[must_use]
-pub struct TrimModifier<Mode> {
+pub struct TrimTransformer<Mode> {
 	mode: PhantomData<Mode>,
 }
 
-impl TrimModifier<Unset> {
+impl TrimTransformer<Unset> {
 	#[inline]
 	pub const fn new() -> Self {
 		Self { mode: PhantomData }
@@ -40,16 +40,16 @@ impl TrimModifier<Unset> {
 
 	/// Only trims ASCII whitespace.
 	#[inline]
-	pub const fn ascii(self) -> TrimModifier<Ascii> {
-		TrimModifier { mode: PhantomData }
+	pub const fn ascii(self) -> TrimTransformer<Ascii> {
+		TrimTransformer { mode: PhantomData }
 	}
 }
 
-impl crate::Modifier<String> for TrimModifier<Unset> {
+impl crate::Transformer<String> for TrimTransformer<Unset> {
 	type Context = ();
 
 	#[inline]
-	fn modify(&self, _ctx: &Self::Context, item: &mut String) {
+	fn transform(&self, _ctx: &Self::Context, item: &mut String) {
 		let end = item.trim_end().len();
 
 		item.truncate(end);
@@ -60,11 +60,11 @@ impl crate::Modifier<String> for TrimModifier<Unset> {
 	}
 }
 
-impl crate::Modifier<String> for TrimModifier<Ascii> {
+impl crate::Transformer<String> for TrimTransformer<Ascii> {
 	type Context = ();
 
 	#[inline]
-	fn modify(&self, _ctx: &Self::Context, item: &mut String) {
+	fn transform(&self, _ctx: &Self::Context, item: &mut String) {
 		let end = item
 			.trim_end_matches(|c: char| c.is_ascii_whitespace())
 			.len();
@@ -82,21 +82,21 @@ impl crate::Modifier<String> for TrimModifier<Ascii> {
 
 #[cfg(test)]
 mod test {
-	use super::TrimModifier;
+	use super::TrimTransformer;
 	use crate::toolbox::test::*;
 
 	#[test]
-	fn test_trim_modifier() {
-		let rule = TrimModifier::new();
+	fn test_trim_transformer() {
+		let rule = TrimTransformer::new();
 		let mut input = " hello ".to_string();
 
-		rule.modify(&(), &mut input);
+		rule.transform(&(), &mut input);
 		assert_eq!(input, "hello");
 
-		let rule = TrimModifier::new().ascii();
+		let rule = TrimTransformer::new().ascii();
 		let mut input = " hello ".to_string();
 
-		rule.modify(&(), &mut input);
+		rule.transform(&(), &mut input);
 		assert_eq!(input, "hello");
 	}
 }

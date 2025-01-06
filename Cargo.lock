@@ -475,7 +475,7 @@ checksum = "f8c5f0a0af699448548ad1a2fbf920fb4bee257eae39953ba95cb84891a0446a"
 
 [[package]]
 name = "wary"
-version = "0.0.4"
+version = "0.1.0"
 dependencies = [
  "email_address",
  "once_cell",
@@ -491,7 +491,7 @@ dependencies = [
 
 [[package]]
 name = "wary_derive"
-version = "0.0.4"
+version = "0.1.0"
 dependencies = [
  "darling",
  "proc-macro2",
