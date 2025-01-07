@@ -50,6 +50,9 @@ pub enum Error {
 	#[cfg(feature = "uuid")]
 	#[error(transparent)]
 	Uuid(#[from] rule::uuid::Error),
+	#[cfg(feature = "credit_card")]
+	#[error(transparent)]
+	CreditCard(#[from] rule::credit_card::Error),
 	#[error("{code}")]
 	Custom {
 		code: &'static str,
@@ -116,6 +119,8 @@ impl Error {
 			Self::Required(error) => error.code(),
 			#[cfg(feature = "uuid")]
 			Self::Uuid(error) => error.code(),
+			#[cfg(feature = "credit_card")]
+			Self::CreditCard(error) => error.code(),
 			Self::Custom { code, .. } => code,
 		}
 	}
@@ -145,6 +150,8 @@ impl Error {
 			Self::Required(error) => error.message(),
 			#[cfg(feature = "uuid")]
 			Self::Uuid(error) => error.message(),
+			#[cfg(feature = "credit_card")]
+			Self::CreditCard(error) => error.message(),
 			Self::Custom { message, .. } => return message.as_deref().map(Cow::Borrowed),
 		})
 	}
@@ -174,6 +181,8 @@ impl Error {
 			Self::Required(error) => error.message(),
 			#[cfg(feature = "uuid")]
 			Self::Uuid(error) => error.message(),
+			#[cfg(feature = "credit_card")]
+			Self::CreditCard(error) => error.message(),
 			Self::Custom { message, .. } => return *message,
 		})
 	}

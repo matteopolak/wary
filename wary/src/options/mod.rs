@@ -22,6 +22,8 @@ pub mod rule {
 	pub mod contains;
 	pub mod equals;
 	pub use equals as eq;
+	#[cfg(feature = "credit_card")]
+	pub mod credit_card;
 	pub mod prefix;
 	#[cfg(feature = "regex")]
 	pub mod regex;

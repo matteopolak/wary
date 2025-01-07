@@ -173,6 +173,7 @@ and `#[validate(alphanumeric())]` are equivalent.
 | [`and`](#rule-and) | - | - | - |
 | [`ascii`](#rule-ascii) | [`AsRef<str>`](wary::AsRef) | - | - |
 | [`contains`](#rule-contains) | [`AsSlice`](wary::AsSlice) | - | - |
+| [`credit_card`](#rule-credit-card) | [`AsRef<str>`](wary::AsRef) | `credit_card` | [`creditcard`](https://github.com/matteopolak/creditcard) |
 | [`custom`](#rule-custom) | [`Rule<T>`](wary::Rule) | - | - |
 | [`dive`](#rule-dive) | [`Validate`](wary::Validate) | - | - |
 | [`email`](#rule-email) | [`AsRef<str>`](wary::AsRef) | `email` | [`email_address`](https://github.com/johnstonskj/rust-email_address) |
@@ -288,6 +289,20 @@ use wary::Wary;
 #[derive(Wary)]
 struct Name(
   #[validate(contains(str = "hello"))]
+  String
+);
+```
+
+### `credit_card` (requires feature `credit_card`) <a id="rule-credit-card"></a>
+
+Validates that the input is a credit card number (PAN).
+
+```rust
+use wary::Wary;
+
+#[derive(Wary)]
+struct Card(
+  #[validate(credit_card)]
   String
 );
 ```
