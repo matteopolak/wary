@@ -18,8 +18,7 @@ pub struct Slice;
 pub struct Not;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize), serde(untagged))]
 pub enum Error {
 	#[error("expected string to start with \"{value}\"")]
 	ShouldStartWith { value: &'static str },

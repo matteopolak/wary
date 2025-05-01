@@ -11,8 +11,7 @@ use crate::toolbox::rule::*;
 pub type Rule<M> = RegexRule<M>;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize), serde(untagged))]
 pub enum Error {
 	#[error("value does not match pattern {pattern}")]
 	NoMatch { pattern: &'static str },

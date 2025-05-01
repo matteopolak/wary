@@ -10,8 +10,8 @@ An optionally `no_std` and `no_alloc` validation and transformation library.
 
 | - | `wary` | `garde` | `validator` | `validify` |
 | - | - | - | - | - |
-| no_std | ✅ | ❌ | ❌ | | ❌ |
-| no_alloc | ✅ | ❌ | ❌ | | ❌ |
+| `no_std` | ✅ | ❌ | ❌ | | ❌ |
+| `no_alloc` | ✅ | ❌ | ❌ | | ❌ |
 | async | ✅ (optional) | ❌ | ❌ | ❌ |
 | enums | ✅ | ✅ | ❌ | ❌ |
 | transform input | ✅ | ❌ | ❌ | ✅ |

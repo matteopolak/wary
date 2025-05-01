@@ -13,8 +13,7 @@ use crate::{
 pub type Rule<S, Mode, Kind> = SuffixRule<S, Mode, Kind>;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize), serde(untagged))]
 pub enum Error {
 	#[error("expected string to end with \"{value}\"")]
 	ShouldEndWith { value: &'static str },

@@ -15,8 +15,7 @@ pub type Rule<O, Mode> = EqualsRule<O, Mode>;
 pub struct Not;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize), serde(untagged))]
 pub enum Error {
 	#[error("expected to equal")]
 	ShouldEqual { value: ItemSlice },

@@ -1,5 +1,7 @@
 mod path;
 
+use core::fmt;
+
 pub use path::Path;
 
 #[cfg(feature = "alloc")]
@@ -54,6 +56,7 @@ pub enum Error {
 	#[error(transparent)]
 	CreditCard(#[from] rule::credit_card::Error),
 	#[error("{code}")]
+	#[cfg_attr(feature = "serde", serde(skip_serializing))]
 	Custom {
 		code: &'static str,
 		#[cfg(feature = "alloc")]
@@ -198,6 +201,14 @@ pub struct Report {
 	len: usize,
 }
 
+impl fmt::Display for Report {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "Report({} errors)", self.errors.len())
+	}
+}
+
+impl core::error::Error for Report {}
+
 #[cfg(feature = "alloc")]
 impl Report {
 	pub fn push(&mut self, path: Path, error: Error) {
@@ -271,7 +282,6 @@ mod ser {
 		path: &'d Path,
 		code: &'static str,
 		message: Option<Cow<'d, str>>,
-		#[serde(skip_serializing_if = "Error::is_custom")]
 		detail: &'d Error,
 	}
 

@@ -1,0 +1,17 @@
+[package]
+name = "hello_axum"
+version = "0.1.0"
+edition = "2021"
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+axum = { version = "0.8", features = ["macros"] }
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+wary = { path = "../../wary", features = ["full", "serde"] }

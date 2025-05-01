@@ -11,7 +11,6 @@ pub type Transformer<Mode> = Lowercase<Mode>;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "snake_case", tag = "code"))]
 pub enum Error {
 	#[error("expected lowercase character at position {position}")]
 	Lowercase { position: usize },
