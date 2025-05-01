@@ -8,12 +8,15 @@ An optionally `no_std` and `no_alloc` validation and transformation library.
 
 ### Why use `wary` over other libraries?
 
-| - | `wary` | `garde` | `validator` |
-| - | - | - | - |
-| no_std | ✅ | ❌ | ❌ |
-| no_alloc | ✅ | ❌ | ❌ |
-| async | ✅ (optional) | ❌ | ❌ |
-| enums | ✅ | ✅ | ❌ |
+| - | `wary` | `garde` | `validator` | `validify` |
+| - | - | - | - | - |
+| no_std | ✅ | ❌ | ❌ | | ❌ |
+| no_alloc | ✅ | ❌ | ❌ | | ❌ |
+| async | ✅ (optional) | ❌ | ❌ | ❌ |
+| enums | ✅ | ✅ | ❌ | ❌ |
+| transform input | ✅ | ❌ | ❌ | ✅ |
+| custom rules | ✅ | ✅ | ✅ | ✅ |
+| pass context | ✅ | ✅ | ✅ | ❌ |
 
 - Basic usage
   - [Basic struct example](#basic-struct-example)
