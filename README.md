@@ -12,7 +12,7 @@ An optionally `no_std` and `no_alloc` validation and transformation library.
 | - | - | - | - |
 | no_std | ✅ | ❌ | ❌ |
 | no_alloc | ✅ | ❌ | ❌ |
-| async | ✅ | ❌ | ❌ |
+| async | ✅ (optional) | ❌ | ❌ |
 | enums | ✅ | ✅ | ❌ |
 
 - Basic usage
