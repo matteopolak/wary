@@ -22,6 +22,9 @@ pub struct Validate {
 
 	#[darling(default)]
 	pub custom: Map<syn::Path, Option<Args>>,
+
+	#[darling(default)]
+	pub custom_async: Map<syn::Path, Option<Args>>,
 }
 
 pub struct ValidateOptions {
@@ -29,6 +32,7 @@ pub struct ValidateOptions {
 	pub or: Tuple<ValidateField>,
 	pub and: Tuple<ValidateField>,
 	pub custom: Map<syn::Path, Option<Args>>,
+	pub custom_async: Map<syn::Path, Option<Args>>,
 }
 
 #[derive(Debug, FromVariant)]
@@ -50,6 +54,9 @@ pub struct ValidateField {
 
 	#[darling(default)]
 	custom: Map<syn::Path, Option<Args>>,
+
+	#[darling(default)]
+	custom_async: Map<syn::Path, Option<Args>>,
 
 	#[darling(default)]
 	inner: Option<Box<ValidateField>>,
@@ -80,6 +87,9 @@ pub struct ValidateFieldWrapper {
 
 	#[darling(default)]
 	custom: Map<syn::Path, Option<Args>>,
+
+	#[darling(default)]
+	pub custom_async: Map<syn::Path, Option<Args>>,
 
 	#[darling(default)]
 	inner: Option<Box<ValidateField>>,
@@ -205,6 +215,18 @@ impl ValidateField {
 			});
 		}
 
+		for (path, args) in self.custom_async.iter() {
+			tokens.extend(quote! {
+				if let Err(e) = #crate_name::AsyncRule::validate_async(
+					&rule::#path::new() #args,
+					ctx,
+					#field
+				).await {
+					__wary_report.push(__wary_parent.append(__wary_field), e);
+				};
+			});
+		}
+
 		let mut and = self.and.0.iter_mut();
 
 		if let Some(and) = and.next() {
@@ -313,6 +335,7 @@ impl ValidateOptions {
 		ValidateField {
 			func: self.func,
 			custom: self.custom,
+			custom_async: self.custom_async,
 			or: self.or,
 			and: self.and,
 			dive: darling::util::Flag::default(),
@@ -336,6 +359,7 @@ impl ValidateFieldWrapper {
 			or: self.or,
 			and: self.and,
 			custom: self.custom,
+			custom_async: self.custom_async,
 			inner: self.inner,
 			builtin: self.builtin,
 			required: self.required,

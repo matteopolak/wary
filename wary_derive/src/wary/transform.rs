@@ -13,11 +13,15 @@ pub struct Transform {
 
 	#[darling(default)]
 	pub custom: Map<syn::Path, Option<Args>>,
+
+	#[darling(default)]
+	pub custom_async: Map<syn::Path, Option<Args>>,
 }
 
 pub struct TransformOptions {
 	pub func: Vec<syn::Expr>,
 	pub custom: Map<syn::Path, Option<Args>>,
+	pub custom_async: Map<syn::Path, Option<Args>>,
 }
 
 #[derive(Debug, FromVariant)]
@@ -39,6 +43,9 @@ pub struct TransformFieldWrapper {
 	custom: Map<syn::Path, Option<Args>>,
 
 	#[darling(default)]
+	pub custom_async: Map<syn::Path, Option<Args>>,
+
+	#[darling(default)]
 	inner: Option<Box<TransformField>>,
 
 	dive: darling::util::Flag,
@@ -56,6 +63,9 @@ struct TransformField {
 	custom: Map<syn::Path, Option<Args>>,
 
 	#[darling(default)]
+	custom_async: Map<syn::Path, Option<Args>>,
+
+	#[darling(default)]
 	inner: Option<Box<TransformField>>,
 
 	dive: darling::util::Flag,
@@ -69,6 +79,7 @@ impl TransformFieldWrapper {
 		TransformField {
 			func: self.func,
 			custom: self.custom,
+			custom_async: self.custom_async,
 			inner: self.inner,
 			dive: self.dive,
 			builtin: self.builtin,
@@ -98,6 +109,7 @@ impl TransformOptions {
 		TransformField {
 			func: self.func,
 			custom: self.custom,
+			custom_async: self.custom_async,
 			inner: None,
 			dive: darling::util::Flag::default(),
 			builtin: Map::default(),
@@ -158,6 +170,16 @@ impl TransformField {
 					ctx,
 					#field
 				);
+			});
+		}
+
+		for (path, args) in self.custom_async.iter() {
+			tokens.extend(quote! {
+				#crate_name::AsyncTransformer::transform_async(
+					&transformer::#path::new() #args,
+					ctx,
+					#field
+				).await;
 			});
 		}
 

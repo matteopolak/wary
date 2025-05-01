@@ -21,7 +21,7 @@ pub mod options;
 pub extern crate alloc;
 #[cfg(feature = "alloc")]
 use alloc::{string::String, vec::Vec};
-use core::prelude::rust_2021::*;
+use core::{future::Future, prelude::rust_2021::*};
 #[doc(hidden)]
 #[cfg(feature = "std")]
 pub use std as alloc;
@@ -84,8 +84,11 @@ pub mod toolbox {
 	}
 
 	#[allow(unused_imports)]
-	pub(crate) mod test {
-		pub use crate::{toolbox::rule::*, Rule, Transform, Transformer, Validate, Wary};
+	pub mod test {
+		pub use crate::{
+			toolbox::rule::*, AsyncRule, AsyncTransform, AsyncTransformer, AsyncValidate, Rule,
+			Transform, Transformer, Validate, Wary,
+		};
 	}
 }
 
@@ -110,6 +113,36 @@ pub trait Wary<C>: Validate<Context = C> + Transform<Context = C> {
 
 impl<T, C> Wary<C> for T where T: Validate<Context = C> + Transform<Context = C> {}
 
+pub trait AsyncWary<C>: AsyncValidate<Context = C> + AsyncTransform<Context = C> {
+	/// Validates with [`AsyncValidate::validate_async`], then (if successful)
+	/// modifies with [`AsyncTransform::transform_async`].
+	///
+	/// # Errors
+	///
+	/// Forwards any errors from [`AsyncValidate::validate_async`].
+	fn wary_async(&mut self, ctx: &C) -> impl Future<Output = Result<(), Report>> + Send;
+}
+
+impl<T, C> AsyncWary<C> for T
+where
+	T: AsyncValidate<Context = C> + AsyncTransform<Context = C> + Send + Sync,
+	C: Sync,
+{
+	async fn wary_async(&mut self, ctx: &C) -> Result<(), Report> {
+		let mut report = Report::default();
+
+		self
+			.validate_into_async(ctx, &Path::default(), &mut report)
+			.await;
+		if report.is_empty() {
+			self.transform_async(ctx).await;
+			Ok(())
+		} else {
+			Err(report)
+		}
+	}
+}
+
 /// Trait for transforming other data.
 pub trait Transformer<I: ?Sized> {
 	/// Additional context required to transform the input.
@@ -119,6 +152,14 @@ pub trait Transformer<I: ?Sized> {
 	fn transform(&self, ctx: &Self::Context, item: &mut I);
 }
 
+pub trait AsyncTransformer<I: ?Sized> {
+	/// Additional context required to transform the input.
+	type Context: Send;
+
+	/// Transform the input.
+	fn transform_async(&self, ctx: &Self::Context, item: &mut I) -> impl Future<Output = ()> + Send;
+}
+
 /// Trait for transforming itself.
 pub trait Transform {
 	/// Additional context required to transform itself.
@@ -126,6 +167,14 @@ pub trait Transform {
 
 	/// Transform itself.
 	fn transform(&mut self, ctx: &Self::Context);
+}
+
+pub trait AsyncTransform {
+	/// Additional context required to transform itself.
+	type Context: Send;
+
+	/// Transform itself.
+	fn transform_async(&mut self, ctx: &Self::Context) -> impl Future<Output = ()> + Send;
 }
 
 /// Trait for validating other data.
@@ -139,6 +188,22 @@ pub trait Rule<I: ?Sized> {
 	///
 	/// Returns an error if the item does not pass validation.
 	fn validate(&self, ctx: &Self::Context, item: &I) -> Result<(), Error>;
+}
+
+pub trait AsyncRule<I: ?Sized> {
+	/// Additional context required to validate the input.
+	type Context: Send;
+
+	/// Validates the item.
+	///
+	/// # Errors
+	///
+	/// Returns an error if the item does not pass validation.
+	fn validate_async(
+		&self,
+		ctx: &Self::Context,
+		item: &I,
+	) -> impl Future<Output = Result<(), Error>> + Send;
 }
 
 /// Trait for validating itself.
@@ -162,6 +227,39 @@ pub trait Validate {
 			Ok(())
 		} else {
 			Err(report)
+		}
+	}
+}
+
+pub trait AsyncValidate {
+	/// Additional context required to validate itself.
+	type Context: Send;
+
+	/// Validates itself and appends all errors to the attached [`Report`].
+	fn validate_into_async(
+		&self,
+		ctx: &Self::Context,
+		parent: &Path,
+		report: &mut Report,
+	) -> impl Future<Output = ()> + Send;
+
+	/// Validates itself.
+	fn validate_async(&self, ctx: &Self::Context) -> impl Future<Output = Result<(), Report>> + Send
+	where
+		Self: Sync,
+		Self::Context: Sync,
+	{
+		let mut report = Report::default();
+
+		async move {
+			self
+				.validate_into_async(ctx, &Path::default(), &mut report)
+				.await;
+			if report.is_empty() {
+				Ok(())
+			} else {
+				Err(report)
+			}
 		}
 	}
 }

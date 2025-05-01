@@ -80,10 +80,12 @@ impl Emit {
 					or: self.validate.or,
 					and: self.validate.and,
 					custom: self.validate.custom,
+					custom_async: self.validate.custom_async,
 				},
 				transform_top: TransformOptions {
 					func: self.transform.func,
 					custom: self.transform.custom,
+					custom_async: self.transform.custom_async,
 				},
 			}
 			.into_token_stream(),
@@ -96,10 +98,12 @@ impl Emit {
 					or: self.validate.or,
 					and: self.validate.and,
 					custom: self.validate.custom,
+					custom_async: self.validate.custom_async,
 				},
 				transform_top: TransformOptions {
 					func: self.transform.func,
 					custom: self.transform.custom,
+					custom_async: self.transform.custom_async,
 				},
 			}
 			.into_token_stream(),
@@ -233,6 +237,12 @@ impl EmitStruct<'_> {
 		let idents = Fields(&self.validate).idents();
 		let ident = &self.options.ident;
 
+		let is_validate_async = self.validate.iter().any(|v| !v.custom_async.is_empty())
+			|| !self.validate_top.custom_async.is_empty();
+
+		let is_transform_async = self.transform.iter().any(|m| !m.custom_async.is_empty())
+			|| !self.transform_top.custom_async.is_empty();
+
 		let validate = self
 			.validate
 			.into_iter()
@@ -258,34 +268,68 @@ impl EmitStruct<'_> {
 		let context = &self.options.context;
 		let ident = &self.options.ident;
 
-		quote! {
-			#[allow(warnings)]
-			impl #imp #crate_name::Validate for #ident #ty #wher {
-				type Context = #context;
+		if is_validate_async || is_transform_async {
+			quote! {
+				#[allow(warnings)]
+				impl #imp #crate_name::AsyncValidate for #ident #ty #wher {
+					type Context = #context;
 
-				fn validate_into(&self, ctx: &Self::Context, __wary_parent: &#crate_name::error::Path, __wary_report: &mut #crate_name::error::Report) {
-					let Self { #destruct } = self;
+					async fn validate_into_async(&self, ctx: &Self::Context, __wary_parent: &#crate_name::error::Path, __wary_report: &mut #crate_name::error::Report) {
+						let Self { #destruct } = self;
 
-					#(
-						#validate
-					)*
+						#(
+							#validate
+						)*
 
-					#validate_top
+						#validate_top
+					}
+				}
+
+				#[allow(warnings)]
+				impl #imp #crate_name::AsyncTransform for #ident #ty #wher {
+					type Context = #context;
+
+					async fn transform_async(&mut self, ctx: &Self::Context) {
+						let Self { #destruct } = self;
+
+						#(
+							#transform
+						)*
+
+						#transform_top
+					}
 				}
 			}
+		} else {
+			quote! {
+				#[allow(warnings)]
+				impl #imp #crate_name::Validate for #ident #ty #wher {
+					type Context = #context;
 
-			#[allow(warnings)]
-			impl #imp #crate_name::Transform for #ident #ty #wher {
-				type Context = #context;
+					fn validate_into(&self, ctx: &Self::Context, __wary_parent: &#crate_name::error::Path, __wary_report: &mut #crate_name::error::Report) {
+						let Self { #destruct } = self;
 
-				fn transform(&mut self, ctx: &Self::Context) {
-					let Self { #destruct } = self;
+						#(
+							#validate
+						)*
 
-					#(
-						#transform
-					)*
+						#validate_top
+					}
+				}
 
-					#transform_top
+				#[allow(warnings)]
+				impl #imp #crate_name::Transform for #ident #ty #wher {
+					type Context = #context;
+
+					fn transform(&mut self, ctx: &Self::Context) {
+						let Self { #destruct } = self;
+
+						#(
+							#transform
+						)*
+
+						#transform_top
+					}
 				}
 			}
 		}

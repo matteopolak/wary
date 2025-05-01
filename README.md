@@ -16,6 +16,7 @@ An optionally `no_std` and `no_alloc` validation and transformation library.
 - [Transformation rules](#transformation-rules)
   - [Implementing custom `Transformer`s](#transformer-custom)
   - [Implementing `Transform` manually](#manual-transform)
+- [Async support](#async)
 
 ### Basic struct example
 
@@ -845,4 +846,59 @@ let mut name = Name {
 name.transform(&());
 
 assert_eq!(name.value, "jane");
+```
+
+### Async support <a id="async"></a>
+
+Wary supports async validation and transformation out of the box. This is useful for cases where a validation step may need to reach out to a database or an external service.
+
+All traits have an async variant:
+
+- [`Wary`](wary::Wary) -> [`AsyncWary`](wary::AsyncWary)
+- [`Validate`](wary::Validate) -> [`AsyncValidate`](wary::AsyncValidate)
+- [`Rule`](wary::Rule) -> [`AsyncRule`](wary::AsyncRule)
+- [`Transform`](wary::Transform) -> [`AsyncTransform`](wary::AsyncTransform)
+- [`Transformer`](wary::Transformer) -> [`AsyncTransformer`](wary::AsyncTransformer)
+
+```rust
+use wary::{Wary, AsyncWary, AsyncTransformer};
+
+struct SecretTransformer;
+
+impl SecretTransformer {
+  const fn new() -> Self {
+    Self
+  }
+}
+
+impl AsyncTransformer<String> for SecretTransformer {
+  type Context = ();
+
+  async fn transform_async(&self, _ctx: &Self::Context, item: &mut String) {
+    item.clear();
+    item.push_str("secret");
+  }
+}
+
+#[allow(non_camel_case_types)]
+mod transformer {
+  pub type secret = super::SecretTransformer;
+}
+
+#[derive(Wary)]
+struct Person {
+  #[transform(custom_async(secret))]
+  name: String,
+}
+
+#[pollster::main]
+async fn main() {
+  let mut person = Person {
+    name: "hello".into(),
+  };
+
+  person.wary_async(&()).await;
+
+  assert_eq!(person.name, "secret");
+}
 ```

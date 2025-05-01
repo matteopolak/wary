@@ -36,6 +36,7 @@ pub mod rule {
 
 	pub mod and;
 	pub mod custom;
+	pub mod custom_async;
 	pub mod dive;
 	pub mod func;
 	pub mod inner;
@@ -49,6 +50,7 @@ pub mod transformer {
 	pub mod trim;
 
 	pub mod custom;
+	pub mod custom_async;
 	pub mod dive;
 	pub mod func;
 	pub mod inner;

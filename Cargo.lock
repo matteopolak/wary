@@ -85,6 +85,7 @@ dependencies = [
 name = "hello_world"
 version = "0.1.0"
 dependencies = [
+ "pollster",
  "wary",
 ]
 
@@ -274,6 +275,26 @@ name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
+
+[[package]]
+name = "pollster"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f3a9f18d041e6d0e102a0a46750538147e5e8992d3b4873aaafee2520b00ce3"
+dependencies = [
+ "pollster-macro",
+]
+
+[[package]]
+name = "pollster-macro"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac5da421106a50887c5b51d20806867db377fbb86bacf478ee0500a912e0c113"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "portable-atomic"
@@ -480,12 +501,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8c5f0a0af699448548ad1a2fbf920fb4bee257eae39953ba95cb84891a0446a"
 
 [[package]]
-name = "wary"
+name = "vhs"
 version = "0.1.0"
+dependencies = [
+ "wary",
+]
+
+[[package]]
+name = "wary"
+version = "0.1.1"
 dependencies = [
  "creditcard",
  "email_address",
  "once_cell",
+ "pollster",
  "regex",
  "semver",
  "serde",
@@ -498,7 +527,7 @@ dependencies = [
 
 [[package]]
 name = "wary_derive"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "darling",
  "proc-macro2",
