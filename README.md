@@ -6,6 +6,15 @@
 
 An optionally `no_std` and `no_alloc` validation and transformation library.
 
+### Why use `wary` over other libraries?
+
+| - | `wary` | `garde` | `validator` |
+| - | - | - | - |
+| no_std | ✅ | ❌ | ❌ |
+| no_alloc | ✅ | ❌ | ❌ |
+| async | ✅ | ❌ | ❌ |
+| enums | ✅ | ✅ | ❌ |
+
 - Basic usage
   - [Basic struct example](#basic-struct-example)
   - [Basic enum example](#basic-enum-example)
