@@ -937,7 +937,7 @@ dependencies = [
 
 [[package]]
 name = "wary"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "creditcard",
  "email_address",
@@ -955,7 +955,7 @@ dependencies = [
 
 [[package]]
 name = "wary_derive"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "darling",
  "proc-macro2",
