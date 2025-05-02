@@ -1,5 +1,6 @@
 #![warn(clippy::pedantic, clippy::print_stdout)]
 #![allow(clippy::too_many_lines, clippy::option_option)]
+#![cfg_attr(not(feature = "serde"), allow(unused_variables, unused_mut, dead_code))]
 
 use darling::FromDeriveInput;
 
