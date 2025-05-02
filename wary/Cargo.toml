@@ -48,4 +48,4 @@ graphemes = ["dep:unicode-segmentation"]
 uuid = ["dep:uuid"]
 credit_card = ["dep:creditcard"]
 
-serde = ["dep:serde"]
+serde = ["dep:serde", "wary_derive?/serde"]

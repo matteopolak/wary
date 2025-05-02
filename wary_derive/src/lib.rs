@@ -14,9 +14,9 @@ pub(crate) fn default_crate_name() -> syn::Path {
 
 #[proc_macro_derive(Wary, attributes(validate, transform, wary, serde))]
 pub fn wary(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-	let input = syn::parse_macro_input!(input as syn::DeriveInput);
+	let mut input = syn::parse_macro_input!(input as syn::DeriveInput);
 
-	match wary::emit::Emit::from_derive_input(&input) {
+	match wary::emit::Emit::from_derive_input(&mut input) {
 		Ok(validate) => validate.into_token_stream(),
 		Err(e) => e.write_errors(),
 	}

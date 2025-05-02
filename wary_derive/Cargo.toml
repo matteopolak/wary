@@ -17,5 +17,9 @@ proc-macro = true
 darling = "0.20"
 proc-macro2 = "1"
 quote = "1"
+serde_derive_internals = { version = "0.29.1", optional = true }
 syn = "2"
 
+[features]
+default = []
+serde = ["dep:serde_derive_internals"]

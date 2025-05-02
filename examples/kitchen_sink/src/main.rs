@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use wary::Wary;
 
 #[allow(non_camel_case_types)]
@@ -45,10 +46,11 @@ where
 	}
 }
 
-#[derive(Debug, Wary)]
+#[derive(Debug, Wary, Deserialize)]
 struct User {
 	#[validate(length(3..=16))]
 	#[transform(lowercase)]
+	#[serde(rename = "userName")] // uses this field in the report
 	username: String,
 	#[validate(custom(password))]
 	password: String,
@@ -59,7 +61,7 @@ struct User {
 	posts: Vec<Post>,
 }
 
-#[derive(Debug, Wary)]
+#[derive(Debug, Wary, Deserialize)]
 struct Post {
 	#[validate(length(1..=128))]
 	#[transform(trim)]

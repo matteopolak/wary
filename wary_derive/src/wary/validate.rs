@@ -115,14 +115,18 @@ impl ValidateField {
 		let mut tokens = proc_macro2::TokenStream::new();
 
 		if top {
-			tokens.extend({
-				let field_path = field.path();
-
-				quote! {
+			if let Some(field_path) = field.path() {
+				tokens.extend(quote! {
 					let __wary_field = #field_path;
-				}
-			});
+				});
+			}
 		}
+
+		let error_path = if field.path().is_some() {
+			quote! { __wary_parent.append(__wary_field) }
+		} else {
+			quote! { __wary_parent.clone() }
+		};
 
 		let option_path = crate::attr::extract_option_path(ty);
 
@@ -134,7 +138,7 @@ impl ValidateField {
 						&(),
 						#field
 					) {
-						__wary_report.push(__wary_parent.append(__wary_field), e);
+						__wary_report.push(#error_path, e);
 					};
 				});
 			}
@@ -174,7 +178,7 @@ impl ValidateField {
 					&(),
 					#field
 				) {
-					__wary_report.push(__wary_parent.append(__wary_field), e);
+					__wary_report.push(#error_path, e);
 				};
 			});
 		}
@@ -184,7 +188,7 @@ impl ValidateField {
 
 			tokens.extend(quote! {
 				{
-					let __wary_parent = __wary_parent.append(__wary_field);
+					let __wary_parent = #error_path;
 					for (__wary_field, #field) in #crate_name::AsSlice::as_slice(#field).iter().enumerate() {
 						#inner
 					}
@@ -197,7 +201,7 @@ impl ValidateField {
 				{
 					let result: ::core::result::Result<(), #crate_name::Error> = (#func)(ctx, #field);
 					if let Err(e) = result {
-						__wary_report.push(__wary_parent.append(__wary_field), e);
+						__wary_report.push(#error_path, e);
 					};
 				}
 			});
@@ -210,7 +214,7 @@ impl ValidateField {
 					ctx,
 					#field
 				) {
-					__wary_report.push(__wary_parent.append(__wary_field), e);
+					__wary_report.push(#error_path, e);
 				};
 			});
 		}
@@ -222,7 +226,7 @@ impl ValidateField {
 					ctx,
 					#field
 				).await {
-					__wary_report.push(__wary_parent.append(__wary_field), e);
+					__wary_report.push(#error_path, e);
 				};
 			});
 		}
@@ -289,7 +293,7 @@ impl ValidateField {
 
 		if self.dive.is_present() {
 			tokens.extend(quote! {
-				#crate_name::Validate::validate_into(#field, ctx, &__wary_parent.append(__wary_field), __wary_report);
+				#crate_name::Validate::validate_into(#field, ctx, &#error_path, __wary_report);
 			});
 		}
 
@@ -303,7 +307,7 @@ impl ValidateField {
 							&(),
 							#field
 						) {
-							__wary_report.push(__wary_parent.append(__wary_field), e);
+							__wary_report.push(#error_path, e);
 						};
 					}
 				},
@@ -345,7 +349,7 @@ impl ValidateOptions {
 		}
 		.to_token_stream(
 			crate_name,
-			&Field::new_ident(format_ident!("self")),
+			&Field::new_ident(format_ident!("self"), false),
 			ty,
 			true,
 		)

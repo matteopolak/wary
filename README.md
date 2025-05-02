@@ -17,6 +17,7 @@ An optionally `no_std` and `no_alloc` validation and transformation library.
 | transform input | ✅ | ❌ | ❌ | ✅ |
 | custom rules | ✅ | ✅ | ✅ | ✅ |
 | pass context | ✅ | ✅ | ✅ | ❌ |
+| respect `serde` field attributes | ✅ | ❌ | ❌ | ❌ |
 
 - Basic usage
   - [Basic struct example](#basic-struct-example)
@@ -37,6 +38,7 @@ use std::borrow::Cow;
 use wary::Wary;
 
 #[derive(Wary)]
+#[wary(transparent)]
 struct Name<'n>(
   #[validate(alphanumeric, length(chars, 5..=20), equals(not, other = "john"))]
   Cow<'n, str>

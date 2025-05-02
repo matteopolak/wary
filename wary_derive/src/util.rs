@@ -5,7 +5,7 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::punctuated::Punctuated;
 
-use crate::wary::{transform::TransformFieldWrapper, validate::ValidateFieldWrapper};
+use crate::wary::{emit::serde, transform::TransformFieldWrapper, validate::ValidateFieldWrapper};
 
 pub type Map<K, V> = VecMap<K, V>;
 
@@ -323,7 +323,7 @@ where
 	/// Emits the destructuring of the variant to be used in a match arm within
 	/// e.g. `Self::Variant { #here }`.
 	pub fn destruct(&self) -> TokenStream {
-		let fields = self.idents();
+		let fields = self.idents(None, false);
 
 		let destruct = fields.into_iter().map(|field| {
 			let ident = field.ident();
@@ -336,55 +336,93 @@ where
 		quote!(#(#destruct),*)
 	}
 
-	pub fn idents(&self) -> Vec<Field> {
-		self
+	pub fn idents(&self, fields: Option<Vec<serde::Field<'_>>>, transparent: bool) -> Vec<Field> {
+		let mut idents = self
 			.0
 			.iter()
 			.enumerate()
 			.map(|(i, f)| {
-				f.ident()
-					.map_or_else(|| Field::new_index(i), |f| Field::new_ident(f.clone()))
+				f.ident().map_or_else(
+					|| Field::new_index(i, transparent),
+					|f| Field::new_ident(f.clone(), transparent),
+				)
 			})
-			.collect::<Vec<_>>()
+			.collect::<Vec<_>>();
+
+		#[cfg(feature = "serde")]
+		if let Some(fields) = fields {
+			for (ident, field) in idents.iter_mut().zip(fields.iter()) {
+				let field_path = field.attrs.name().deserialize_name();
+				ident.set_path(field_path.to_string());
+			}
+		}
+
+		idents
 	}
 }
 
-pub enum Field {
+pub struct Field {
+	path: Option<String>,
+	has_path: bool,
+	pub kind: FieldKind,
+}
+
+pub enum FieldKind {
 	Ident(syn::Ident),
 	Index(usize),
 }
 
 impl Field {
-	pub fn new_ident(ident: syn::Ident) -> Self {
-		Self::Ident(ident)
+	pub fn new_ident(ident: syn::Ident, transparent: bool) -> Self {
+		Self {
+			path: None,
+			has_path: !transparent,
+			kind: FieldKind::Ident(ident),
+		}
 	}
 
-	pub fn new_index(index: usize) -> Self {
-		Self::Index(index)
+	pub fn new_index(index: usize, transparent: bool) -> Self {
+		Self {
+			path: None,
+			has_path: !transparent,
+			kind: FieldKind::Index(index),
+		}
+	}
+
+	pub fn set_path(&mut self, path: String) {
+		self.path = Some(path);
 	}
 }
 
 impl Field {
-	pub fn path(&self) -> TokenStream {
-		match self {
-			Field::Ident(ident) => ident.to_string().to_token_stream(),
-			Field::Index(index) => index.to_token_stream(),
+	pub fn path(&self) -> Option<TokenStream> {
+		if !self.has_path {
+			return None;
 		}
+
+		if let Some(path) = &self.path {
+			return Some(path.to_token_stream());
+		}
+
+		Some(match &self.kind {
+			FieldKind::Ident(ident) => ident.to_string().to_token_stream(),
+			FieldKind::Index(index) => index.to_token_stream(),
+		})
 	}
 
 	pub fn ident(&self) -> TokenStream {
-		match self {
-			Field::Ident(ident) => ident.to_token_stream(),
-			Field::Index(index) => syn::Index::from(*index).to_token_stream(),
+		match &self.kind {
+			FieldKind::Ident(ident) => ident.to_token_stream(),
+			FieldKind::Index(index) => syn::Index::from(*index).to_token_stream(),
 		}
 	}
 }
 
 impl ToTokens for Field {
 	fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-		tokens.extend(match self {
-			Field::Ident(ident) => ident.to_token_stream(),
-			Field::Index(index) => format_ident!("_{}", syn::Index::from(*index)).to_token_stream(),
+		tokens.extend(match &self.kind {
+			FieldKind::Ident(ident) => ident.to_token_stream(),
+			FieldKind::Index(index) => format_ident!("_{}", syn::Index::from(*index)).to_token_stream(),
 		});
 	}
 }

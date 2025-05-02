@@ -36,9 +36,10 @@ impl AsRef {
 			}
 
 			let ty = field.ty;
-			let field = field
-				.ident
-				.map_or_else(|| Field::new_index(idx), Field::new_ident);
+			let field = field.ident.map_or_else(
+				|| Field::new_index(idx, false),
+				|f| Field::new_ident(f, false),
+			);
 
 			tokens.extend(quote! {
 				impl #crate_name::AsRef<#ty> for #ident {

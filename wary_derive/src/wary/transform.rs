@@ -116,7 +116,7 @@ impl TransformOptions {
 		}
 		.to_token_stream(
 			crate_name,
-			&Field::new_ident(format_ident!("self")),
+			&Field::new_ident(format_ident!("self"), false),
 			ty,
 			true,
 		)

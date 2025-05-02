@@ -483,6 +483,7 @@ checksum = "d75a2a4b1b190afb6f5425f10f6a8f959d2ea0b9c2b1d79553551850539e4674"
 name = "kitchen_sink"
 version = "0.1.0"
 dependencies = [
+ "serde",
  "serde_json",
  "wary",
 ]
@@ -687,6 +688,17 @@ name = "serde_derive"
 version = "1.0.219"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b0276cf7f2c73365f7157c8123c21cd9a50fbbd844757af28ca1f5925fc2a00"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "serde_derive_internals"
+version = "0.29.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "18d26a20a969b9e3fdf2fc2d9f21eda6c40e2de84c9408bb5d3b05d499aae711"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -929,13 +941,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8c5f0a0af699448548ad1a2fbf920fb4bee257eae39953ba95cb84891a0446a"
 
 [[package]]
-name = "vhs"
-version = "0.1.0"
-dependencies = [
- "wary",
-]
-
-[[package]]
 name = "wary"
 version = "0.2.0"
 dependencies = [
@@ -960,6 +965,7 @@ dependencies = [
  "darling",
  "proc-macro2",
  "quote",
+ "serde_derive_internals",
  "syn",
 ]
 
