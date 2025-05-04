@@ -25,17 +25,6 @@ impl Error {
 		}
 	}
 
-	#[cfg(feature = "alloc")]
-	#[must_use]
-	pub(crate) fn message(&self) -> Cow<'static, str> {
-		match self {
-			Self::ShouldBeEmpty => "value should be empty",
-			Self::CannotBeEmpty => "value should not be empty",
-		}
-		.into()
-	}
-
-	#[cfg(not(feature = "alloc"))]
 	pub(crate) fn message(&self) -> &'static str {
 		match self {
 			Self::ShouldBeEmpty => "value should be empty",

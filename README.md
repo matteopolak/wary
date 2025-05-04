@@ -204,6 +204,7 @@ and `#[validate(alphanumeric())]` are equivalent.
 | [`required`](#rule-required) | [`AsSlice`](wary::AsSlice) | - | - |
 | [`semver`](#rule-semver) | [`AsRef<str>`](wary::AsRef) | `semver` | [`semver`](https://github.com/dtolnay/semver) |
 | [`suffix`](#rule-suffix) | [`AsSlice`](wary::AsSlice) | - | - |
+| [`time`](#rule-time) | - | - | [`jiff`](https://github.com/BurntSushi/jiff) or [`chrono`](https://github.com/chronotope/chrono) |
 | [`uppercase`](#rule-uppercase) | [`AsRef<str>`](wary::AsRef) | - | - |
 | [`url`](#rule-url) | [`AsRef<str>`](wary::AsRef) | `url` | [`url`](https://github.com/servo/rust-url) |
 | [`uuid`](#rule-uuid) | [`AsRef<str>`](wary::AsRef) | `uuid` | [`uuid`](https://github.com/uuid-rs/uuid) |
@@ -636,6 +637,21 @@ use wary::Wary;
 struct Name(
   #[validate(suffix(str = "hello"))]
   String
+);
+```
+
+### `time` (requires feature `chrono` or `jiff`) <a id="rule-time"></a>
+
+Validates that the input time is within a range.
+
+```rust
+use wary::Wary;
+use jiff::Zoned;
+
+#[derive(Wary)]
+struct Time(
+  #[validate(time(after = Zoned::now()))]
+  Zoned
 );
 ```
 

@@ -81,32 +81,6 @@ impl Error {
 		}
 	}
 
-	#[cfg(feature = "alloc")]
-	#[must_use]
-	pub(crate) fn message(&self) -> Cow<'static, str> {
-		match self {
-			Self::InvalidCharacter => "invalid character",
-			Self::MissingSeparator => "missing separator",
-			Self::LocalPartEmpty => "local-part is empty",
-			Self::LocalPartTooLong => "local-part is too long",
-			Self::DomainEmpty => "domain is empty",
-			Self::DomainTooLong => "domain is too long",
-			Self::SubDomainEmpty => "sub-domain is empty",
-			Self::SubDomainTooLong => "sub-domain is too long",
-			Self::DomainTooFew => "too few sub-domains",
-			Self::DomainInvalidSeparator => "invalid separator",
-			Self::UnbalancedQuotes => "unbalanced quotes in local-part",
-			Self::InvalidComment => "invalid comment",
-			Self::InvalidIPAddress => "invalid IP address",
-			Self::UnsupportedDomainLiteral => "unsupported domain literal",
-			Self::UnsupportedDisplayName => "unsupported display name",
-			Self::MissingDisplayName => "missing display name",
-			Self::MissingEndBracket => "missing end bracket",
-		}
-		.into()
-	}
-
-	#[cfg(not(feature = "alloc"))]
 	pub(crate) fn message(&self) -> &'static str {
 		match self {
 			Self::InvalidCharacter => "invalid character",

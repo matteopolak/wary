@@ -42,19 +42,6 @@ impl Error {
 		}
 	}
 
-	#[cfg(feature = "alloc")]
-	#[must_use]
-	pub(crate) fn message(&self) -> Cow<'static, str> {
-		match self {
-			Self::InvalidFormat => "invalid character in PAN",
-			Self::UnknownType => "unknown credit card type",
-			Self::InvalidLength => "invalid PAN length",
-			Self::InvalidLuhn => "invalid luhn checksum",
-		}
-		.into()
-	}
-
-	#[cfg(not(feature = "alloc"))]
 	pub(crate) fn message(&self) -> &'static str {
 		match self {
 			Self::InvalidFormat => "invalid character in PAN",

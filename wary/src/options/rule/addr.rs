@@ -30,18 +30,6 @@ impl Error {
 		}
 	}
 
-	#[cfg(feature = "alloc")]
-	#[must_use]
-	pub(crate) fn message(&self) -> Cow<'static, str> {
-		match self {
-			Self::InvalidIp => "invalid IP address",
-			Self::InvalidIpv4 => "invalid IPv4 address",
-			Self::InvalidIpv6 => "invalid IPv6 address",
-		}
-		.into()
-	}
-
-	#[cfg(not(feature = "alloc"))]
 	pub(crate) fn message(&self) -> &'static str {
 		match self {
 			Self::InvalidIp => "invalid IP address",

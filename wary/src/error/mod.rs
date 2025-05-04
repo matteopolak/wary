@@ -55,6 +55,9 @@ pub enum Error {
 	#[cfg(feature = "credit_card")]
 	#[error(transparent)]
 	CreditCard(#[from] rule::credit_card::Error),
+	#[cfg(any(feature = "jiff", feature = "chrono"))]
+	#[error(transparent)]
+	Time(#[from] rule::time::Error),
 	#[error("{code}")]
 	#[cfg_attr(feature = "serde", serde(skip_serializing))]
 	Custom {
@@ -124,6 +127,8 @@ impl Error {
 			Self::Uuid(error) => error.code(),
 			#[cfg(feature = "credit_card")]
 			Self::CreditCard(error) => error.code(),
+			#[cfg(any(feature = "jiff", feature = "chrono"))]
+			Self::Time(error) => error.code(),
 			Self::Custom { code, .. } => code,
 		}
 	}
@@ -131,9 +136,9 @@ impl Error {
 	#[cfg(feature = "alloc")]
 	pub(crate) fn message(&self) -> Option<Cow<str>> {
 		Some(match self {
-			Self::Alphanumeric(error) => error.message(),
-			Self::Ascii(error) => error.message(),
-			Self::Addr(error) => error.message(),
+			Self::Alphanumeric(error) => error.message().into(),
+			Self::Ascii(error) => error.message().into(),
+			Self::Addr(error) => error.message().into(),
 			Self::Lowercase(error) => error.message(),
 			Self::Uppercase(error) => error.message(),
 			Self::Contains(error) => error.message(),
@@ -141,51 +146,25 @@ impl Error {
 			Self::Suffix(error) => error.message(),
 			Self::Equals(error) => error.message(),
 			#[cfg(feature = "email")]
-			Self::Email(error) => error.message(),
+			Self::Email(error) => error.message().into(),
 			#[cfg(feature = "url")]
-			Self::Url(error) => error.message(),
+			Self::Url(error) => error.message().into(),
 			Self::Length(error) => error.message(),
-			Self::Range(error) => error.message(),
+			Self::Range(error) => error.message().into(),
 			#[cfg(feature = "semver")]
-			Self::Semver(error) => error.message(),
+			Self::Semver(error) => error.message().into(),
 			#[cfg(feature = "regex")]
 			Self::Regex(error) => error.message(),
-			Self::Required(error) => error.message(),
+			Self::Required(error) => error.message().into(),
 			#[cfg(feature = "uuid")]
-			Self::Uuid(error) => error.message(),
+			Self::Uuid(error) => error.message().into(),
 			#[cfg(feature = "credit_card")]
-			Self::CreditCard(error) => error.message(),
+			Self::CreditCard(error) => error.message().into(),
+			#[cfg(any(feature = "jiff", feature = "chrono"))]
+			Self::Time(error) => error.message().into(),
+			#[cfg(feature = "alloc")]
 			Self::Custom { message, .. } => return message.as_deref().map(Cow::Borrowed),
-		})
-	}
-
-	#[cfg(not(feature = "alloc"))]
-	pub(crate) fn message(&self) -> Option<&'static str> {
-		Some(match self {
-			Self::Alphanumeric(error) => error.message(),
-			Self::Ascii(error) => error.message(),
-			Self::Addr(error) => error.message(),
-			Self::Lowercase(error) => error.message(),
-			Self::Uppercase(error) => error.message(),
-			Self::Contains(error) => error.message(),
-			Self::Prefix(error) => error.message(),
-			Self::Suffix(error) => error.message(),
-			Self::Equals(error) => error.message(),
-			#[cfg(feature = "email")]
-			Self::Email(error) => error.message(),
-			#[cfg(feature = "url")]
-			Self::Url(error) => error.message(),
-			Self::Length(error) => error.message(),
-			Self::Range(error) => error.message(),
-			#[cfg(feature = "semver")]
-			Self::Semver(error) => error.message(),
-			#[cfg(feature = "regex")]
-			Self::Regex(error) => error.message(),
-			Self::Required(error) => error.message(),
-			#[cfg(feature = "uuid")]
-			Self::Uuid(error) => error.message(),
-			#[cfg(feature = "credit_card")]
-			Self::CreditCard(error) => error.message(),
+			#[cfg(not(feature = "alloc"))]
 			Self::Custom { message, .. } => return *message,
 		})
 	}

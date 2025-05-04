@@ -58,10 +58,10 @@ impl Error {
 	#[cfg(not(feature = "alloc"))]
 	pub(crate) fn message(&self) -> &'static str {
 		match self {
-			Self::ShouldContain { .. } => "expected to contain",
+			Self::ShouldContain { .. } => "did not contain expected value",
 			Self::ShouldNotContain { .. } => "found unexpected value",
-			Self::ShouldContainSlice { .. } => "expected to contain",
-			Self::ShouldNotContainSlice { .. } => "found unexpected value",
+			Self::ShouldContainSlice { .. } => "did not contain expected sequence",
+			Self::ShouldNotContainSlice { .. } => "found unexpected sequence",
 		}
 	}
 }

@@ -66,8 +66,8 @@ impl Error {
 	#[cfg(not(feature = "alloc"))]
 	pub fn message(&self) -> &'static str {
 		match self {
-			Self::TooShort { .. } => "expected length of at least",
-			Self::TooLong { .. } => "expected length of at most",
+			Self::TooShort { .. } => "length is too short",
+			Self::TooLong { .. } => "length is too long",
 		}
 	}
 }

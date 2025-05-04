@@ -27,17 +27,6 @@ impl Error {
 		}
 	}
 
-	#[cfg(feature = "alloc")]
-	#[must_use]
-	pub(crate) fn message(&self) -> Cow<'static, str> {
-		match self {
-			Self::TooSmall => "value is too small",
-			Self::TooLarge => "value is too large",
-		}
-		.into()
-	}
-
-	#[cfg(not(feature = "alloc"))]
 	pub(crate) fn message(&self) -> &'static str {
 		match self {
 			Self::TooSmall => "value is too small",

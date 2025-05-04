@@ -31,6 +31,8 @@ pub mod rule {
 	#[cfg(feature = "semver")]
 	pub mod semver;
 	pub mod suffix;
+	#[cfg(any(feature = "jiff", feature = "chrono"))]
+	pub mod time;
 	#[cfg(feature = "uuid")]
 	pub mod uuid;
 
