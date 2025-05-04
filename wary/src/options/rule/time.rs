@@ -48,6 +48,7 @@ impl Error {
 ///  #[validate(time(after = EPOCH_JIFF))]
 ///  time_jiff: jiff::civil::DateTime,
 /// }
+/// ```
 #[must_use]
 pub struct TimeRule<Min, Max> {
 	min: Option<Min>,
