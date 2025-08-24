@@ -59,7 +59,6 @@ pub enum Error {
 	#[error(transparent)]
 	Time(#[from] rule::time::Error),
 	#[error("{code}")]
-	#[cfg_attr(feature = "serde", serde(skip_serializing))]
 	Custom {
 		code: &'static str,
 		#[cfg(feature = "alloc")]
