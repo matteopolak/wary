@@ -168,6 +168,42 @@ impl Error {
 			Self::Custom { message, .. } => return *message,
 		})
 	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub(crate) fn message(&self) -> Option<&str> {
+		Some(match self {
+			Self::Alphanumeric(error) => error.message().into(),
+			Self::Ascii(error) => error.message().into(),
+			Self::Addr(error) => error.message().into(),
+			Self::Lowercase(error) => error.message(),
+			Self::Uppercase(error) => error.message(),
+			Self::Contains(error) => error.message(),
+			Self::Prefix(error) => error.message(),
+			Self::Suffix(error) => error.message(),
+			Self::Equals(error) => error.message(),
+			#[cfg(feature = "email")]
+			Self::Email(error) => error.message().into(),
+			#[cfg(feature = "url")]
+			Self::Url(error) => error.message().into(),
+			Self::Length(error) => error.message(),
+			Self::Range(error) => error.message().into(),
+			#[cfg(feature = "semver")]
+			Self::Semver(error) => error.message().into(),
+			#[cfg(feature = "regex")]
+			Self::Regex(error) => error.message(),
+			Self::Required(error) => error.message().into(),
+			#[cfg(feature = "uuid")]
+			Self::Uuid(error) => error.message().into(),
+			#[cfg(feature = "credit_card")]
+			Self::CreditCard(error) => error.message().into(),
+			#[cfg(any(feature = "jiff", feature = "chrono"))]
+			Self::Time(error) => error.message().into(),
+			#[cfg(feature = "alloc")]
+			Self::Custom { message, .. } => return message.as_deref().map(Cow::Borrowed),
+			#[cfg(not(feature = "alloc"))]
+			Self::Custom { message, .. } => return *message,
+		})
+	}
 }
 
 #[derive(Debug, Default)]
@@ -260,7 +296,10 @@ mod ser {
 	struct Inner<'d> {
 		path: &'d Path,
 		code: &'static str,
+		#[cfg(feature = "alloc")]
 		message: Option<Cow<'d, str>>,
+		#[cfg(not(feature = "alloc"))]
+		message: Option<&'d str>,
 		detail: &'d Error,
 	}
 
@@ -297,9 +336,9 @@ mod ser {
 		{
 			use serde::ser::SerializeSeq;
 
-			let mut seq = serializer.serialize_seq(Some(self.len))?;
+			let mut seq = serializer.serialize_seq(Some(self.len.min(self.errors.len())))?;
 
-			for i in 0..self.len {
+			for i in 0..self.len.min(self.errors.len()) {
 				if let Some((path, error)) = &self.errors[i] {
 					let detail = Inner {
 						path,
@@ -311,6 +350,8 @@ mod ser {
 					seq.serialize_element(&detail)?;
 				}
 			}
+
+			seq.end()
 		}
 	}
 }
