@@ -133,7 +133,7 @@ impl Error {
 	}
 
 	#[cfg(feature = "alloc")]
-	pub(crate) fn message(&self) -> Option<Cow<str>> {
+	pub(crate) fn message(&self) -> Option<Cow<'_, str>> {
 		Some(match self {
 			Self::Alphanumeric(error) => error.message().into(),
 			Self::Ascii(error) => error.message().into(),
