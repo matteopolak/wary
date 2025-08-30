@@ -59,7 +59,6 @@ pub enum Error {
 	#[error(transparent)]
 	Time(#[from] rule::time::Error),
 	#[error("{code}")]
-	#[cfg_attr(feature = "serde", serde(skip_serializing))]
 	Custom {
 		code: &'static str,
 		#[cfg(feature = "alloc")]
@@ -134,7 +133,7 @@ impl Error {
 	}
 
 	#[cfg(feature = "alloc")]
-	pub(crate) fn message(&self) -> Option<Cow<str>> {
+	pub(crate) fn message(&self) -> Option<Cow<'_, str>> {
 		Some(match self {
 			Self::Alphanumeric(error) => error.message().into(),
 			Self::Ascii(error) => error.message().into(),
