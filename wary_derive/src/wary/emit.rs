@@ -6,7 +6,7 @@ use super::{
 	transform::{Transform, TransformFieldWrapper, TransformOptions, TransformVariant},
 	validate::{Validate, ValidateFieldWrapper, ValidateOptions, ValidateVariant},
 };
-use crate::util::Fields;
+use crate::{dive_config::DiveConfig, util::Fields};
 
 fn default_context() -> Type {
 	Type(syn::parse_quote! { () })
@@ -198,18 +198,21 @@ impl EmitEnum<'_> {
 			return darling::Error::custom("transparent enums are not supported").write_errors();
 		}
 
+		let (imp, ty, wher) = self.options.generics.split_for_impl();
+		let crate_name = &self.options.crate_name;
+		let context = &self.options.context;
 		let ident = &self.options.ident;
 
 		let is_validate_async = self
 			.validate
 			.iter()
-			.any(|v| !v.fields.iter().any(|f| f.custom_async.is_empty()))
+			.any(|v| !v.fields.iter().any(|f| f.custom_async.is_empty() || !matches!(f.dive_async, DiveConfig::None)))
 			|| !self.validate_top.custom_async.is_empty();
 
 		let is_transform_async = self
 			.transform
 			.iter()
-			.any(|m| !m.fields.iter().any(|f| f.custom_async.is_empty()))
+			.any(|m| !m.fields.iter().any(|f| f.custom_async.is_empty() || !matches!(f.dive_async, DiveConfig::None)))
 			|| !self.transform_top.custom_async.is_empty();
 
 		#[allow(unused)]
@@ -263,11 +266,6 @@ impl EmitEnum<'_> {
 		let transform_top = self
 			.transform_top
 			.into_token_stream(&self.options.crate_name, &syn::parse_quote!(#ident));
-
-		let (imp, ty, wher) = self.options.generics.split_for_impl();
-		let crate_name = &self.options.crate_name;
-		let context = &self.options.context;
-		let ident = &self.options.ident;
 
 		if is_validate_async || is_transform_async {
 			quote! {
@@ -360,13 +358,19 @@ impl EmitStruct<'_> {
 		let destruct = Fields(&self.validate).destruct();
 		let idents =
 			Fields(&self.validate).idents(Some(self.serde), self.options.transparent.is_present());
-		let ident = &self.options.ident;
 
 		let is_validate_async = self.validate.iter().any(|v| !v.custom_async.is_empty())
-			|| !self.validate_top.custom_async.is_empty();
+			|| !self.validate_top.custom_async.is_empty()
+			|| self.validate.iter().any(|v| !matches!(v.dive_async, DiveConfig::None));
 
 		let is_transform_async = self.transform.iter().any(|m| !m.custom_async.is_empty())
-			|| !self.transform_top.custom_async.is_empty();
+			|| !self.transform_top.custom_async.is_empty()
+			|| self.transform.iter().any(|m| !matches!(m.dive_async, DiveConfig::None));
+
+		let (imp, ty, wher) = self.options.generics.split_for_impl();
+		let crate_name = &self.options.crate_name;
+		let context = &self.options.context;
+		let ident = &self.options.ident;
 
 		let validate = self
 			.validate
@@ -387,11 +391,6 @@ impl EmitStruct<'_> {
 		let transform_top = self
 			.transform_top
 			.into_token_stream(&self.options.crate_name, &syn::parse_quote!(#ident));
-
-		let (imp, ty, wher) = self.options.generics.split_for_impl();
-		let crate_name = &self.options.crate_name;
-		let context = &self.options.context;
-		let ident = &self.options.ident;
 
 		if is_validate_async || is_transform_async {
 			quote! {

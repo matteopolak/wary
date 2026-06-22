@@ -1,7 +1,7 @@
 use darling::{ast, FromDeriveInput, FromField, FromMeta, FromVariant};
 use quote::{format_ident, quote};
 
-use crate::util::{Args, Field, Map};
+use crate::{dive_config::{DiveConfig, parse_dive}, util::{Args, Field, Map}};
 
 #[derive(FromDeriveInput)]
 #[darling(attributes(transform))]
@@ -48,7 +48,11 @@ pub struct TransformFieldWrapper {
 	#[darling(default)]
 	inner: Option<Box<TransformField>>,
 
-	dive: darling::util::Flag,
+	#[darling(default, with = "parse_dive")]
+	dive: DiveConfig,
+
+	#[darling(default, with = "parse_dive")]
+	pub dive_async: DiveConfig,
 
 	#[darling(flatten)]
 	builtin: Map<syn::Path, Option<Args>>,
@@ -68,7 +72,11 @@ struct TransformField {
 	#[darling(default)]
 	inner: Option<Box<TransformField>>,
 
-	dive: darling::util::Flag,
+	#[darling(default, with = "parse_dive")]
+	dive: DiveConfig,
+
+	#[darling(default, with = "parse_dive")]
+	dive_async: DiveConfig,
 
 	#[darling(flatten)]
 	builtin: Map<syn::Path, Option<Args>>,
@@ -82,6 +90,7 @@ impl TransformFieldWrapper {
 			custom_async: self.custom_async,
 			inner: self.inner,
 			dive: self.dive,
+			dive_async: self.dive_async,
 			builtin: self.builtin,
 		}
 	}
@@ -111,7 +120,8 @@ impl TransformOptions {
 			custom: self.custom,
 			custom_async: self.custom_async,
 			inner: None,
-			dive: darling::util::Flag::default(),
+			dive: DiveConfig::default(),
+			dive_async: DiveConfig::default(),
 			builtin: Map::default(),
 		}
 		.to_token_stream(
@@ -183,11 +193,25 @@ impl TransformField {
 			});
 		}
 
-		if self.dive.is_present() {
-			tokens.extend(quote! {
-				#crate_name::Transform::transform(#field, ctx);
-			});
-		}
+		match &self.dive {
+            DiveConfig::None => {}
+            DiveConfig::Default => {
+				tokens.extend(quote! { #crate_name::Transform::transform(#field, ctx); });
+            }
+            DiveConfig::Custom(custom_ctx) => {
+                tokens.extend(quote! { #crate_name::Transform::transform(#field, #custom_ctx); });
+            }
+        }
+
+		match &self.dive_async {
+            DiveConfig::None => {}
+            DiveConfig::Default => {
+				tokens.extend(quote! { #crate_name::AsyncTransform::transform_async(#field, ctx).await; });
+            }
+            DiveConfig::Custom(custom_ctx) => {
+                tokens.extend(quote! { #crate_name::AsyncTransform::transform_async(#field, #custom_ctx).await; });
+            }
+        }
 
 		if top {
 			if let Some(ref option_path) = option_path {

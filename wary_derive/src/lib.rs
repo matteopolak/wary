@@ -6,6 +6,7 @@ use darling::FromDeriveInput;
 
 mod as_ref;
 mod attr;
+mod dive_config;
 mod util;
 mod wary;
 

@@ -2,8 +2,7 @@ use darling::{ast, FromDeriveInput, FromField, FromMeta, FromVariant};
 use quote::{format_ident, quote, ToTokens};
 
 use crate::{
-	attr,
-	util::{Args, ArgsRef, Field, Map, Tuple},
+	attr, dive_config::{DiveConfig, parse_dive_opt}, util::{Args, ArgsRef, Field, Map, Tuple}
 };
 
 #[derive(FromDeriveInput)]
@@ -61,7 +60,11 @@ pub struct ValidateField {
 	#[darling(default)]
 	inner: Option<Box<ValidateField>>,
 
-	dive: darling::util::Flag,
+	#[darling(default, with = "parse_dive_opt", map = "Option::unwrap_or_default")]
+	dive: DiveConfig,
+
+	#[darling(default, with = "parse_dive_opt", map = "Option::unwrap_or_default")]
+	dive_async: DiveConfig,
 
 	#[darling(default)]
 	required: Option<Option<Args>>,
@@ -94,7 +97,11 @@ pub struct ValidateFieldWrapper {
 	#[darling(default)]
 	inner: Option<Box<ValidateField>>,
 
-	dive: darling::util::Flag,
+	#[darling(default, with = "parse_dive_opt", map = "Option::unwrap_or_default")]
+	dive: DiveConfig,
+
+	#[darling(default, with = "parse_dive_opt", map = "Option::unwrap_or_default")]
+	pub dive_async: DiveConfig,
 
 	#[darling(default)]
 	required: Option<Option<Args>>,
@@ -290,12 +297,26 @@ impl ValidateField {
 				}
 			});
 		}
+		
+		match &self.dive {
+            DiveConfig::None => { }
+            DiveConfig::Default => {
+				tokens.extend(quote! { #crate_name::Validate::validate_into(#field, ctx, &#error_path, __wary_report); });
+            }
+            DiveConfig::Custom(custom_ctx) => {
+                tokens.extend(quote! { #crate_name::Validate::validate_into(#field, #custom_ctx, &#error_path, __wary_report); });
+            }
+        }
 
-		if self.dive.is_present() {
-			tokens.extend(quote! {
-				#crate_name::Validate::validate_into(#field, ctx, &#error_path, __wary_report);
-			});
-		}
+		match &self.dive_async {
+            DiveConfig::None => { }
+            DiveConfig::Default => {
+				tokens.extend(quote! { #crate_name::AsyncValidate::validate_into_async(#field, ctx, &#error_path, __wary_report).await; });
+            }
+            DiveConfig::Custom(custom_ctx) => {
+                tokens.extend(quote! { #crate_name::AsyncValidate::validate_into_async(#field, #custom_ctx, &#error_path, __wary_report).await; });
+            }
+        }
 
 		if let Some(ref option_path) = option_path {
 			let el = self.required.as_ref().map_or_else(
@@ -342,7 +363,8 @@ impl ValidateOptions {
 			custom_async: self.custom_async,
 			or: self.or,
 			and: self.and,
-			dive: darling::util::Flag::default(),
+			dive: DiveConfig::default(),
+			dive_async: DiveConfig::default(),
 			inner: None,
 			required: None,
 			builtin: Map::default(),
@@ -368,6 +390,7 @@ impl ValidateFieldWrapper {
 			builtin: self.builtin,
 			required: self.required,
 			dive: self.dive,
+			dive_async: self.dive_async,
 		}
 	}
 }

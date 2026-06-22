@@ -5,7 +5,7 @@ use core::fmt;
 pub use path::Path;
 
 #[cfg(feature = "alloc")]
-use crate::alloc::{borrow::Cow, vec::Vec};
+use crate::alloc::{borrow::Cow, collections::BTreeMap, vec::Vec};
 use crate::options::rule;
 
 #[derive(Debug, thiserror::Error, PartialEq)]
@@ -63,8 +63,12 @@ pub enum Error {
 		code: &'static str,
 		#[cfg(feature = "alloc")]
 		message: Option<Cow<'static, str>>,
+		#[cfg(feature = "alloc")]
+		parameters: Option<BTreeMap<&'static str, Cow<'static, str>>>,
 		#[cfg(not(feature = "alloc"))]
 		message: Option<&'static str>,
+		#[cfg(not(feature = "alloc"))]
+		parameters: Option<&'static [(&'static str, &'static str)]>,
 	},
 }
 
@@ -75,6 +79,7 @@ impl Error {
 		Self::Custom {
 			code,
 			message: None,
+			parameters: None,
 		}
 	}
 
@@ -88,6 +93,7 @@ impl Error {
 		Self::Custom {
 			code,
 			message: Some(message.into()),
+			parameters: None,
 		}
 	}
 
@@ -96,6 +102,25 @@ impl Error {
 		Self::Custom {
 			code,
 			message: Some(message),
+			parameters: None,
+		}
+	}
+
+	#[cfg(feature = "alloc")]
+	pub fn with_message_and_parameters(code: &'static str, message: impl Into<Cow<'static, str>>, parameters: &[(&'static str, Cow<'static, str>)]) -> Self {
+		Self::Custom {
+			code,
+			message: Some(message.into()),
+			parameters: Some(parameters.iter().cloned().collect()),
+		}
+	}
+
+	#[cfg(not(feature = "alloc"))]
+	pub fn with_message_and_parameters(code: &'static str, message: &'static str, parameters: &'static [(&'static str, &'static str)]) -> Self {
+		Self::Custom {
+			code,
+			message: Some(message),
+			parameters: Some(parameters),
 		}
 	}
 
@@ -225,6 +250,10 @@ impl core::error::Error for Report {}
 
 #[cfg(feature = "alloc")]
 impl Report {
+	pub fn errors (&self) -> &Vec<(Path, Error)> {
+		&self.errors
+	}
+
 	pub fn push(&mut self, path: Path, error: Error) {
 		self.errors.push((path, error));
 	}
